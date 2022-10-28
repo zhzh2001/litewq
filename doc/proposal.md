@@ -14,6 +14,10 @@ WolfQuest is a wolf simulation game, developed by eduweb. It is especially popul
 
 However, WolfQuest AE doesn't have a mobile version yet, and the available mobile version is based on WolfQuest Classic, which is outdated and has limited graphics. We want to create a mobile version of WolfQuest AE for Android, called **LiteWQ**. It will be a very simple game, with only a few features of original WolfQuest. It will be an excellent final project for Computer Graphics course. 
 
+![WolfQuest Classic on Android](img/mobile.jpg)
+
+Note the quality of shadows is a bit low. We will try to improve it.
+
 # Features
 
 LiteWQ is planned to have the following features:
