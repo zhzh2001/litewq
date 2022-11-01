@@ -31,15 +31,15 @@ LiteWQ is planned to have the following features:
 - Real-time collision detection (optional)
 - Advanced lighting system, including shadows, global illumination, and reflections (optional)
 
-![Scent View in WQ AE](img/scent.png)
+![Scent View in WQ AE](img/scent.jpg)
 
 In the original game, scent view allows players to track the scent of preys, predators, and various objects. It is an indispensable part of the game, so we want to implement it in LiteWQ. The scents are represented by floating particles in the air, which drift with the wind. Both animals and their tracks can emit scent particles, so the player can track the animals by following the scent particles. Different colors and shapes of particles represent different animals. Other special symbols represent carcasses, dens, scent posts (used to mark territory), and other objects. In LiteWQ, we will probably only implement limited subset of these features such as tracking carcasses and dens.
 
-![Scent View (Continued)](img/animal_track.png)
+![Scent View (Continued)](img/animal_track.jpg)
 
 In the original game, entering the scent view will cause the world to be rendered in grayscale, so that the player can focus on the scent particles. We will also implement this feature in LiteWQ. However, normal view will not likely to be implemented, because animal animation is difficult. 
 
-![Normal View in WQ AE](img/normal.png)
+![Normal View in WQ AE](img/normal.jpg)
 
 # Game Engine
 
