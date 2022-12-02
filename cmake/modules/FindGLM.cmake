@@ -15,7 +15,7 @@
 # of the environment varible will NOT result in
 # re-running the header search and therefore NOT
 # adjust the variables set by this module.
-#=============================================================================
+# =============================================================================
 # Copyright 2012 Carsten Neumann
 #
 # Distributed under the OSI-approved BSD License (the "License");
@@ -24,16 +24,16 @@
 # This software is distributed WITHOUT ANY WARRANTY; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the License for more information.
-#=============================================================================
+# =============================================================================
 # (To distribute this file outside of CMake, substitute the full
 # License text for the above reference.)
 # default search dirs
 
 SET(_glm_HEADER_SEARCH_DIRS
-"/usr/include"
-"/usr/local/include"
-"${CMAKE_SOURCE_DIR}/includes"
-"C:/Program Files (x86)/glm" )
+	"/usr/include"
+	"/usr/local/include"
+	"${CMAKE_SOURCE_DIR}/include"
+	"C:/Program Files (x86)/glm")
 # check environment variable
 SET(_glm_ENV_ROOT_DIR "$ENV{GLM_ROOT_DIR}")
 IF(NOT GLM_ROOT_DIR AND _glm_ENV_ROOT_DIR)

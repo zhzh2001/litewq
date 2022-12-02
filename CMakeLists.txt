@@ -6,7 +6,6 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
-
 find_package(GLM REQUIRED)
 find_package(GLFW3 REQUIRED)
 find_package(OpenMP REQUIRED)
@@ -17,19 +16,11 @@ include_directories(${COMMON_INCLUDES})
 # pre-build ar library.
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
-if (CMAKE_BUILD_TYPE STREQUAL "")
+if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
 endif()
 
-
-if (WIN32)
-    set(OpenGL::GL opengl32)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-else()
-    find_package(OpenGL REQUIRED)
-    add_definitions(${OPENGL_DEFINITIONS})
-endif()
-
+find_package(OpenGL REQUIRED)
+add_definitions(${OPENGL_DEFINITIONS})
 
 add_subdirectory(source)
-
