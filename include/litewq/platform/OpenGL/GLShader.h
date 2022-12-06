@@ -19,6 +19,9 @@ public:
     void updateUniformFloat4(const std::string &name, const glm::vec4 &vec);
     void updateUniformMat3(const std::string &name, const glm::mat3 &mat);
     void updateUniformMat4(const std::string &name, const glm::mat4 &mat);
+
+    void updateUniformInt(const std::string &name, int value);
+
 private:
     void compile(const char *source);
     void createProgram();
