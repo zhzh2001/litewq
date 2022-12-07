@@ -127,17 +127,17 @@ CHECK_FUNC(_GE, >=)
 CHECK_FUNC(_EQ, ==)
 CHECK_FUNC(_NE, !=)
 
-#define CHECK_BINARY_OP(name, op, x, y)                                             \
-    if (!LogCheck##name(x, y))                                                      \
-        LogFatal(__FILE_NAME__, __LINE__).stream()                                  \
-            <<  "Check failed : "   << #x " " #op " " #y << "\n"                    \
-            << BackTrace() << ":"                                                   \
+#define CHECK_BINARY_OP(name, op, x, y)                   \
+    if (!LogCheck##name(x, y))                            \
+    LogFatal(__FILE__, __LINE__).stream()                 \
+        << "Check failed : " << #x " " #op " " #y << "\n" \
+        << BackTrace() << ":"
 
-#define CHECK(x)                                                                    \
-    if (!(x))                                                                      \
-        LogFatal(__FILE_NAME__, __LINE__).stream()                                  \
-            << "Check failed : " << #x << "\n"                                      \
-            << BackTrace() << ":"                                                   
+#define CHECK(x)                           \
+    if (!(x))                              \
+    LogFatal(__FILE__, __LINE__).stream()  \
+        << "Check failed : " << #x << "\n" \
+        << BackTrace() << ":"
 
 #define CHECK_LT(x, y) CHECK_BINARY_OP(_LT, <, x, y)
 #define CHECK_GT(x, y) CHECK_BINARY_OP(_GT, >, x, y)
@@ -146,10 +146,9 @@ CHECK_FUNC(_NE, !=)
 #define CHECK_EQ(x, y) CHECK_BINARY_OP(_EQ, ==, x, y)
 #define CHECK_NE(x, y) CHECK_BINARY_OP(_NE, !=, x, y)
 
-
-#define LOG_FATAL LogFatal(__FILE_NAME__, __LINE__)
-#define LOG_INFO  Log("INFO", __FILE_NAME__, __LINE__)
-#define LOG_WARNING Log("Warning", __FILE_NAME__, __LINE__)
+#define LOG_FATAL LogFatal(__FILE__, __LINE__)
+#define LOG_INFO Log("INFO", __FILE__, __LINE__)
+#define LOG_WARNING Log("Warning", __FILE__, __LINE__)
 #define LOG(severity) LOG_##severity.stream()
 
 #define litewq_unreachable(msg) LOG(FATAL) << msg
