@@ -10,8 +10,13 @@ find_package(GLM REQUIRED)
 find_package(GLFW3 REQUIRED)
 find_package(OpenMP REQUIRED)
 
-set(COMMON_INCLUDES ${CMAKE_SOURCE_DIR}/include ${GLM_INCLUDE_DIR} ${GLFW3_INCLUDE_DIR})
+set(COMMON_INCLUDES ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR} ${GLM_INCLUDE_DIR} ${GLFW3_INCLUDE_DIR})
 include_directories(${COMMON_INCLUDES})
+
+configure_file(
+    include/litewq/utils/config.h.in 
+    litewq/config.h
+)
 
 # pre-build ar library.
 link_directories(${CMAKE_SOURCE_DIR}/lib)

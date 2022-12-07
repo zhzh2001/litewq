@@ -2,10 +2,10 @@
 #include "litewq/surface/WavefrontOBJ.h"
 #include "litewq/platform/OpenGL/GLShader.h"
 #include "litewq/camera/camera.h"
+#include "litewq/utils/Loader.h"
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
 #include "glm/glm.hpp"
@@ -192,7 +192,10 @@ int main(int argc, char *argv[])
 	}
 
 	// Create shader
-	GLShader shader("assets/shader/simple/vertex.glsl", "assets/shader/simple/frag.glsl");
+	GLShader shader(
+		Loader::readFromRelative("shader/simple/vertex.glsl"), 
+		Loader::readFromRelative("shader/simple/frag.glsl")
+	);
 
 	// Create vertex data
 	float vertices1[] = {
