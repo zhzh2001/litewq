@@ -20,14 +20,17 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
 
 void Camera::update_camera_vectors()
 {
-	glm::vec3 front;
+	glm::vec3 front, look_front;
 	front.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
 	if (fly_mode_)
 		front.y = sin(glm::radians(pitch_));
 	else
 		front.y = 0.0f;
 	front.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+	look_front = front;
+	look_front.y = sin(glm::radians(pitch_));
 	front_ = glm::normalize(front);
+	look_front_ = glm::normalize(look_front);
 
 	right_ = glm::normalize(glm::cross(front_, world_up_));
 	up_ = glm::normalize(glm::cross(right_, front_));
@@ -35,7 +38,7 @@ void Camera::update_camera_vectors()
 
 glm::mat4 Camera::get_view_matrix() const
 {
-	return glm::lookAt(position_, position_ + front_, up_);
+	return glm::lookAt(position_, position_ + look_front_, up_);
 }
 
 float Camera::get_zoom() const

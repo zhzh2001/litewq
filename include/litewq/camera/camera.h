@@ -37,6 +37,7 @@ namespace litewq
 		glm::vec3 up_;
 		glm::vec3 right_;
 		glm::vec3 world_up_;
+		glm::vec3 look_front_;
 
 		float yaw_;
 		float pitch_;
