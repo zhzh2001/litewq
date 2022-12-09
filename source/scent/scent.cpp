@@ -22,7 +22,7 @@ void Scent::initGL()
 	mesh_->initGL();
 }
 
-void Scent::render(glm::vec3 camera_direction)
+void Scent::render(glm::vec3 camera_direction, glm::mat4 view, glm::mat4 projection)
 {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -32,14 +32,22 @@ void Scent::render(glm::vec3 camera_direction)
 		for (int i = 0; i < distance; i++)
 		{
 			glm::vec3 position = source_ + direction * (1.0f * i);
+			glm::vec3 center = glm::project(position, view, projection, glm::vec4(0, 0, 800, 600));
+			glm::vec3 outer = glm::project(position + direction * 0.1f, view, projection, glm::vec4(0, 0, 800, 600));
 			shader_.updateUniformMat4("model", glm::translate(glm::mat4(1.0f), position));
+			shader_.updateUniformFloat3("center", center);
+			shader_.updateUniformFloat3("outer", outer);
 			mesh_->render();
 		}
 	else
 		for (int i = distance; i > 0; i--)
 		{
 			glm::vec3 position = source_ + direction * (1.0f * i);
+			glm::vec3 center = glm::project(position, view, projection, glm::vec4(0, 0, 800, 600));
+			glm::vec3 outer = glm::project(position + direction * 0.1f, view, projection, glm::vec4(0, 0, 800, 600));
 			shader_.updateUniformMat4("model", glm::translate(glm::mat4(1.0f), position));
+			shader_.updateUniformFloat3("center", center);
+			shader_.updateUniformFloat3("outer", outer);
 			mesh_->render();
 		}
 	glDisable(GL_BLEND);

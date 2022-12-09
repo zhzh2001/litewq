@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// Draw scent
-		scent.render(camera.get_front());
+		scent.render(camera.get_front(), view, projection);
 
 		// Draw 21x21 tiles around camera
 		glBindTexture(GL_TEXTURE_2D, texGrass);

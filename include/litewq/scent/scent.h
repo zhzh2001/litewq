@@ -11,7 +11,7 @@ namespace litewq
 	public:
 		Scent(std::default_random_engine &generator, GLShader &shader);
 		void initGL();
-		void render(glm::vec3 camera_direction);
+		void render(glm::vec3 camera_direction, glm::mat4 view, glm::mat4 projection);
 
 	private:
 		glm::vec3 source_;
