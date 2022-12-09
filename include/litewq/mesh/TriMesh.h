@@ -23,6 +23,7 @@ public:
     TriMesh() = delete;
     static std::unique_ptr<Mesh> from_obj(const std::string &filename);
     static std::unique_ptr<Mesh> from_bezier(const BezierSurface &bezier);
+    static std::unique_ptr<Mesh> create_sphere(float radius, unsigned int n_slices, unsigned int n_stacks);
     /* A mesh may contain multiple sub-mesh and its own
      * vertex, index, uv and material, texture.
      */

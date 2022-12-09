@@ -3,6 +3,7 @@
 #include "litewq/platform/OpenGL/GLShader.h"
 #include "litewq/camera/camera.h"
 #include "litewq/utils/Loader.h"
+#include "litewq/scent/scent.h"
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -14,6 +15,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <random>
 
 using namespace litewq;
 
@@ -262,6 +264,11 @@ int main(int argc, char *argv[])
 	shader.Bind();
 	shader.updateUniformInt("texture1", 0);
 
+	// Create scent
+	std::default_random_engine generator(time(NULL));
+	Scent scent(generator, shader);
+	scent.initGL();
+
 	// Render loop
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
@@ -297,6 +304,9 @@ int main(int argc, char *argv[])
 		model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
 		shader.updateUniformMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// Draw scent
+		scent.render(camera.get_front());
 
 		// Draw 21x21 tiles around camera
 		glBindTexture(GL_TEXTURE_2D, texGrass);

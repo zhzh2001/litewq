@@ -87,6 +87,49 @@ TriMesh::from_bezier(const BezierSurface &bezier) {
     return mesh;
 }
 
+std::unique_ptr<Mesh>
+TriMesh::create_sphere(float radius, unsigned int n_slices, unsigned int n_stacks)
+{
+    std::vector<Vertex> vertex;
+    std::vector<unsigned int> indices;
+
+    float dphi = glm::pi<float>() / n_stacks;
+    float dtheta = 2 * glm::pi<float>() / n_slices;
+
+    Vertex vert;
+    for (int i = 0; i < n_stacks; ++i)
+    {
+        float phi = dphi * i;
+        for (int j = 0; j < n_slices; ++j)
+        {
+            float theta = dtheta * j;
+            glm::vec3 position = glm::vec3(radius * sin(phi) * cos(theta),
+                                           radius * sin(phi) * sin(theta),
+                                           radius * cos(phi));
+            vert.position_ = position;
+            vertex.push_back(vert);
+        }
+    }
+
+    for (int i = 0; i < n_stacks - 1; ++i)
+    {
+        for (int j = 0; j < n_slices - 1; ++j)
+        {
+            unsigned int dudv_index = i * n_slices + j;
+            indices.push_back(dudv_index);
+            indices.push_back(dudv_index + 1);
+            indices.push_back(dudv_index + n_slices);
+
+            indices.push_back(dudv_index + 1);
+            indices.push_back(dudv_index + n_slices);
+            indices.push_back(dudv_index + n_slices + 1);
+        }
+    }
+
+    auto mesh = std::make_unique<TriMesh>(std::move(vertex), std::move(indices));
+    return mesh;
+}
+
 void TriMesh::initGL() {
     LOG(INFO) << "TriMesh Init: ";
     LOG(INFO) << "Totol Vertex: " << global_vertices_.size();
