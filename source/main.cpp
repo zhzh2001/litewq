@@ -266,11 +266,12 @@ int main(int argc, char *argv[])
 
 	// Create scent
 	std::default_random_engine generator(time(NULL));
-	Scent scent(generator, shader);
+	Scent scent(generator, shader, 0.1);
 	scent.initGL();
 
 	// Render loop
 	glEnable(GL_DEPTH_TEST);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	while (!glfwWindowShouldClose(window))
 	{
 		// Input
@@ -305,9 +306,6 @@ int main(int argc, char *argv[])
 		shader.updateUniformMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		// Draw scent
-		scent.render(camera.get_front(), view, projection);
-
 		// Draw 21x21 tiles around camera
 		glBindTexture(GL_TEXTURE_2D, texGrass);
 		glBindVertexArray(VAO2);
@@ -320,6 +318,9 @@ int main(int argc, char *argv[])
 				shader.updateUniformMat4("model", model);
 				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 			}
+
+		// Draw scent
+		scent.render(camera.get_front(), view, projection);
 
 		// Swap buffers
 		glfwSwapBuffers(window);
