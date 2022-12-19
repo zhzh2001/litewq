@@ -168,7 +168,7 @@ void TriMesh::initGL() {
 
 void TriMesh::render() {
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, global_indices_.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLE_FAN, global_indices_.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
 

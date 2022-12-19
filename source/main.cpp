@@ -25,6 +25,9 @@ const int SCR_HEIGHT = 600;
 int window_width = SCR_WIDTH;
 int window_height = SCR_HEIGHT;
 
+int current_width = SCR_WIDTH;
+int current_height = SCR_HEIGHT;
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -51,6 +54,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 			{
 				glfwSetWindowMonitor(window, nullptr, 0, 0, window_width, window_height, 0);
 				fullscreen = false;
+				current_width = window_width;
+				current_height = window_height;
 			}
 			else
 			{
@@ -58,6 +63,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 				const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 				glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 				fullscreen = true;
+				current_width = mode->width;
+				current_height = mode->height;
 			}
 		}
 	}
@@ -320,7 +327,7 @@ int main(int argc, char *argv[])
 			}
 
 		// Draw scent
-		scent.render(camera.get_front(), view, projection);
+		scent.render(cameraPos, view, projection, glm::vec4(0, 0, current_width, current_height));
 
 		// Swap buffers
 		glfwSwapBuffers(window);

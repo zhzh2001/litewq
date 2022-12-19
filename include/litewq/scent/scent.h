@@ -12,7 +12,7 @@ namespace litewq
 	public:
 		Scent(std::default_random_engine &generator, GLShader &shader, float z);
 		void initGL();
-		void render(glm::vec3 camera_direction, glm::mat4 view, glm::mat4 projection);
+		void render(glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, glm::vec4 viewport);
 
 	private:
 		glm::vec3 source_;
@@ -25,5 +25,6 @@ namespace litewq
 		std::vector<glm::vec3> scent_;
 		int distance_;
 		double last_time_;
+		glm::vec3 wind_;
 	};
 }
