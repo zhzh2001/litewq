@@ -26,11 +26,14 @@ TriMesh::from_obj(const std::string &filename) {
 
     std::vector<Vertex> vertex(n_vertices);
     std::vector<unsigned int> indices;
+    std::vector<SubMeshArea> offsets;
     for (int i = 0; i < n_vertices; ++i) {
         vertex[i].position_ = global_vertices.vertices[i];
     }
 
     for (const auto &geom: geometry) {
+        SubMeshArea submesh_offset;
+        submesh_offset.index_offset_ = indices.size();
         for (const auto &face : geom->face_elements_) {
             for (int n_corners = 0; n_corners < face.corner_count_; ++n_corners) {
                 const auto &corner = geom->face_corners_[face.start_index_ + n_corners];
@@ -41,9 +44,11 @@ TriMesh::from_obj(const std::string &filename) {
                 indices.push_back(vertex_index);
             }
         }
+        submesh_offset.index_size_ = indices.size() - submesh_offset.index_offset_;
+        offsets.push_back(submesh_offset);
     }
 
-    auto mesh = std::make_unique<TriMesh>(std::move(vertex), std::move(indices));
+    auto mesh = std::make_unique<TriMesh>(std::move(vertex), std::move(indices), std::move(offsets));
     return mesh;
 }
 
@@ -105,10 +110,11 @@ TriMesh::create_sphere(float radius, unsigned int n_slices, unsigned int n_stack
         for (int j = 0; j < n_slices; ++j)
         {
             float theta = dtheta * j;
-            glm::vec3 position = glm::vec3(radius * sin(phi) * cos(theta),
+            vert.position_ = glm::vec3(radius * sin(phi) * cos(theta),
                                            radius * sin(phi) * sin(theta),
                                            radius * cos(phi));
-            vert.position_ = position;
+            /* respect to origin */
+            vert.normal_ = vert.position_;
             vertex.push_back(vert);
         }
     }
@@ -170,7 +176,9 @@ void TriMesh::initGL() {
 
 void TriMesh::render() {
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLE_FAN, global_indices_.size(), GL_UNSIGNED_INT, 0);
+    for (const auto& submesh_offset: offsets_) {
+        glDrawElements(GL_TRIANGLES, submesh_offset.index_size_, GL_UNSIGNED_INT, (void *)(submesh_offset.index_offset_));
+    }
     glBindVertexArray(0);
 }
 

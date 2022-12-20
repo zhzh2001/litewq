@@ -29,15 +29,36 @@ public:
      */
     std::vector<Vertex> global_vertices_;
     std::vector<unsigned int> global_indices_;
+    /* multiple submesh support. */
+    struct SubMeshArea {
+        /* start */
+        unsigned int index_offset_;
+        unsigned int index_size_; 
+    };
+    std::vector<SubMeshArea> offsets_;
 
-    // support one sub-mesh only.
-    // std::vector<unsigned int> offsets_;
-    // std::vector<unsigned int> counts_;
-
+    /* constructors */
+    TriMesh(const std::vector<Vertex> &vertex, const std::vector<unsigned int> &indices, const std::vector<SubMeshArea> &offsets)
+        : global_vertices_(vertex), global_indices_(indices), offsets_(offsets) { }
+    TriMesh(std::vector<Vertex> &&vertex, std::vector<unsigned int> &&indices, std::vector<SubMeshArea> &&offsets)
+        : global_vertices_(vertex), global_indices_(indices), offsets_(offsets) {
+    }
     TriMesh(const std::vector<Vertex> &vertex, const std::vector<unsigned int> &indices)
-        : global_vertices_(vertex), global_indices_(indices) {}
+        : global_vertices_(vertex), global_indices_(indices) 
+    {
+        SubMeshArea submesh_offset;
+        submesh_offset.index_offset_ = 0;
+        submesh_offset.index_size_ = global_indices_.size();
+        offsets_.push_back(submesh_offset);
+    }
     TriMesh(std::vector<Vertex> &&vertex, std::vector<unsigned int> &&indices)
-        : global_vertices_(vertex), global_indices_(indices) {}
+        : global_vertices_(vertex), global_indices_(indices) 
+    {
+        SubMeshArea submesh_offset;
+        submesh_offset.index_offset_ = 0;
+        submesh_offset.index_size_ = global_indices_.size();
+        offsets_.push_back(submesh_offset);
+    }
 
     virtual void render() override;
 
@@ -46,6 +67,8 @@ public:
 private:
     bool need_rendering_ = false;
     unsigned int VAO, VBO, EBO;
+
+
 };
 
 } // end namespace litewq
