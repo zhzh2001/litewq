@@ -7,6 +7,8 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <memory>
+#include <map>
 
 namespace litewq {
 
@@ -47,6 +49,9 @@ struct Geometry {
     int vertex_index_max_ = -1;
     std::vector<PolyCorner> face_corners_;
     std::vector<PolyElem> face_elements_;
+
+    std::map<std::string, int> material_indices_;
+    std::vector<std::string> material_order_;
     void track_vertex_index(int index) {
         vertices_.insert(index);
         if (vertex_index_min_ > index) vertex_index_min_ = index;
@@ -59,26 +64,75 @@ class OBJParser {
 public:
     OBJParser() = delete;
     OBJParser(const std::string filename) : filename_(filename) {}
-    void parse(Geometry &geometry, GlobalVertices &global_vertices);
+    void parse(std::vector<std::unique_ptr<Geometry>> &geometry, GlobalVertices &global_vertices);
+    std::vector<std::string> &get_mtl_libraries() {
+        return mtl_libraries_;
+    }
 private:
-    size_t skipWhiteSpace();
     void skipComment();
-    bool expectKeyword(const std::string_view keyword);
-    void tryParseInt(int &dst);
-    void tryParseFloat(float &dst);
-    bool startWith(const std::string_view s);
     void geom_add_vertex(GlobalVertices &global_vertices);
     void geom_add_vertex_normal(GlobalVertices &global_vertices);
     void geom_add_uv_vertex(GlobalVertices &global_vertices);
-    void geom_add_polygon(Geometry &geom, GlobalVertices &global_vertices, const bool shaded_smooth);
-    void geom_add_name(Geometry &geom);
+    void geom_add_polygon(Geometry *geom, GlobalVertices &global_vertices, const bool shaded_smooth);
+    void geom_add_name(Geometry *geom);
     bool geom_update_smooth();
 
+    std::vector<std::string> mtl_libraries_;
     std::string filename_;
     std::string input_;
     size_t index_ = 0;
     size_t n_line_;
 };
 
-} // end namespace litewq
+enum class MTLTexMapType {
+  Color = 0,
+  Metallic,
+  Specular,
+  SpecularExponent,
+  Roughness,
+  Sheen,
+  Reflection,
+  Emission,
+  Alpha,
+  Normal,
+  Count
+};
+
+struct MTLTexMap {
+    bool isValid() const {
+        return !image_path_.empty();
+    }
+    std::string image_path_;
+    std::string mtl_dir_path;
+};
+
+struct MTLMaterial {
+    std::string name_;
+    glm::vec3 Ka_; // ambient color of material
+    glm::vec3 Kd_; // diffuse color of material
+    glm::vec3 Ks_; // specular color of material
+    float Ns_; // specular expoent, range between 0 and 1000
+    float Ni_ = 1.0f; // refraction, range from 0.001 and 10, 1.0 means no refraction
+    float d = 1.0f; // transparent
+    MTLTexMap tex_map_[int(MTLTexMapType::Count)];
+};
+
+class MTLParser {
+public:
+    MTLParser() = delete;
+    MTLParser(const std::string &mtl_library, const std::string &obj_filepath);
+    void parse(std::map<std::string, std::unique_ptr<MTLMaterial>> &materials);
+private:
+    void parseTextureMap(MTLMaterial *material);
+
+    std::string mtl_file_path_;
+    std::string mtl_dir_path_;
+    std::string input_;
+    size_t index_ = 0;
+    size_t n_line_ = 1;
+};
+
+} 
+
+// end namespace litewq
 
