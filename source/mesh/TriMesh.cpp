@@ -1,4 +1,6 @@
 #include "litewq/mesh/TriMesh.h"
+#include "litewq/mesh/Material.h"
+#include "litewq/platform/OpenGL/GLShader.h"
 #include "litewq/surface/WavefrontOBJ.h"
 
 #include <glm/gtx/string_cast.hpp>
@@ -11,11 +13,11 @@ using namespace litewq;
 
 
 std::unique_ptr<Mesh> 
-TriMesh::from_obj(const std::string &filename) {
+TriMesh::from_obj(const std::string &obj_file) {
     std::vector<std::unique_ptr<Geometry>> geometry;
     GlobalVertices global_vertices;
 
-    OBJParser parser(filename);
+    OBJParser parser(obj_file);
     parser.parse(geometry, global_vertices);
 
     size_t n_vertices = global_vertices.vertices.size();
@@ -33,6 +35,7 @@ TriMesh::from_obj(const std::string &filename) {
 
     for (const auto &geom: geometry) {
         SubMeshArea submesh_offset;
+        submesh_offset.name_ = geom->geometry_name_;
         submesh_offset.index_offset_ = indices.size();
         for (const auto &face : geom->face_elements_) {
             for (int n_corners = 0; n_corners < face.corner_count_; ++n_corners) {
@@ -49,6 +52,21 @@ TriMesh::from_obj(const std::string &filename) {
     }
 
     auto mesh = std::make_unique<TriMesh>(std::move(vertex), std::move(indices), std::move(offsets));
+    /* Deal with MTL*/
+    std::map<std::string, std::unique_ptr<MTLMaterial>> materials;
+    for (const auto& mtl_library : parser.get_mtl_libraries()) {
+        MTLParser mtl_parser(mtl_library, obj_file);
+        mtl_parser.parse(materials);
+    }
+
+    for (unsigned int i = 0; i < geometry.size(); ++i) {
+        const auto &geom = geometry[i];
+        for (const auto &mat_name : geom->material_order_) {
+            auto &mtl = materials.at(mat_name);
+            auto *phong_mat = PhongMaterial::Create(mtl.get(), nullptr);
+            mesh->material_map_[i] = (Material *)phong_mat;
+        }
+    }
     return mesh;
 }
 
@@ -176,7 +194,12 @@ void TriMesh::initGL() {
 
 void TriMesh::render() {
     glBindVertexArray(VAO);
-    for (const auto& submesh_offset: offsets_) {
+    for (unsigned int i = 0; i < offsets_.size(); ++i) {
+        /* if corresponding submesh has material */
+        if (material_map_.count(i)) {
+            material_map_.at(i)->updateMaterial();
+        }
+        auto &submesh_offset = offsets_[i];
         glDrawElements(GL_TRIANGLES, submesh_offset.index_size_, GL_UNSIGNED_INT, (void *)(submesh_offset.index_offset_));
     }
     glBindVertexArray(0);
@@ -188,3 +211,20 @@ void TriMesh::finishGL() {
     glDeleteVertexArrays(1, &VAO);
 }
 
+
+
+void TriMesh::renderSubMesh(unsigned int index) {
+    /* if corresponding submesh has material, and bind shader */
+    if (material_map_.count(index)) {
+        material_map_[index]->updateMaterial();
+    }
+    glBindVertexArray(VAO);
+    auto &submesh_offset = offsets_[index];
+    glDrawElements(GL_TRIANGLES, submesh_offset.index_size_, GL_UNSIGNED_INT, (void *)(submesh_offset.index_offset_));
+}
+
+void TriMesh::setMaterialShader(unsigned int index, GLShader *shader) {
+    auto &submesh = offsets_[index];
+    LOG(INFO) << "Set submesh index: " << index << " Shader: " << "\n";
+    material_map_.at(index)->shader = shader;
+}

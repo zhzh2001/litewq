@@ -1,11 +1,14 @@
 #pragma once
 #include "litewq/mesh/Mesh.h"
+#include "litewq/mesh/Material.h"
+#include "litewq/platform/OpenGL/GLShader.h"
 #include "litewq/surface/Bezier.h"
 #include <glm/glm.hpp>
 
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace litewq {
 
@@ -31,11 +34,14 @@ public:
     std::vector<unsigned int> global_indices_;
     /* multiple submesh support. */
     struct SubMeshArea {
+        std::string name_;
         /* start */
         unsigned int index_offset_;
         unsigned int index_size_; 
     };
     std::vector<SubMeshArea> offsets_;
+
+    std::map<unsigned int, Material *> material_map_;
 
     /* constructors */
     TriMesh(const std::vector<Vertex> &vertex, const std::vector<unsigned int> &indices, const std::vector<SubMeshArea> &offsets)
@@ -61,6 +67,9 @@ public:
     }
 
     virtual void render() override;
+    /* portable API for debug */
+    void renderSubMesh(unsigned int index);
+    void setMaterialShader(unsigned int index, GLShader *shader);
 
     virtual void initGL() override;
     void finishGL();
