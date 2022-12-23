@@ -30,8 +30,9 @@ static std::size_t skipWhiteSpace(const std::string &input, size_t &index) {
     return new_lines;
 }
 
-void OBJParser::skipComment() {
-    for (; index_ < input_.size() && input_[index_] != '\n'; index_++); 
+static size_t skipComment(std::string &input_, size_t index_) {
+    for (; index_ < input_.size() && input_[index_] != '\n'; index_++);
+    return index_;
 }
 
 static size_t tryParseFloat(const std::string &input, size_t index, float &dst) {
@@ -102,7 +103,7 @@ void OBJParser::parse(std::vector<std::unique_ptr<Geometry>> &geometry, GlobalVe
     for (;index_ < input_.size(); ) {
         n_line_ += skipWhiteSpace(input_, index_);
         if (input_[index_] == '#')
-            skipComment();
+          index_ = skipComment(input_, index_);
         else if (input_[index_] == 'v') {
             if (expectKeyword(input_, index_, "v")) {
                 geom_add_vertex(global_vertices);
@@ -135,7 +136,7 @@ void OBJParser::parse(std::vector<std::unique_ptr<Geometry>> &geometry, GlobalVe
             index_ = tryParseString(input_, index_, mtl_library_name);
             LOG(INFO) << "Import MTL library: " << mtl_library_name;
             if (std::find(mtl_libraries_.begin(), mtl_libraries_.end(), mtl_library_name) 
-                != mtl_libraries_.end()) {
+                == mtl_libraries_.end()) {
                     mtl_libraries_.push_back(mtl_library_name);
             }
         }
@@ -278,7 +279,7 @@ void OBJParser::geom_add_polygon(Geometry *geom, GlobalVertices &global_vertices
 }
 
 
-static MTLTexMapType mtl_parse_texture_type(const std::string &input, size_t index) {
+static MTLTexMapType mtl_parse_texture_type(const std::string &input, size_t &index) {
     if (expectKeyword(input, index, "map_Kd")) {
         return MTLTexMapType::Color;
     }
@@ -308,6 +309,10 @@ void MTLParser::parse(std::map<std::string, std::unique_ptr<MTLMaterial>> &globa
     MTLMaterial *material = nullptr;
     for (;index_ < input_.size(); ) {
         n_line_ += skipWhiteSpace(input_, index_);
+        if (index_ >= input_.size())
+            break;
+        if (input_[index_] == '#')
+          index_ = skipComment(input_, index_);
         /* expect a new material */
         if (expectKeyword(input_, index_, "newmtl")) {
             index_ = tryParseString(input_, index_, mtl_name);
@@ -318,6 +323,7 @@ void MTLParser::parse(std::map<std::string, std::unique_ptr<MTLMaterial>> &globa
                     mtl_name, 
                     std::make_unique<MTLMaterial>()
                 ).first->second.get();
+                material->name_ = mtl_name;
             }
         }
         else if (material != nullptr) {
@@ -329,6 +335,18 @@ void MTLParser::parse(std::map<std::string, std::unique_ptr<MTLMaterial>> &globa
             }
             else if (expectKeyword(input_, index_, "Ks")) {
                 parse_floats(input_, index_, glm::value_ptr(material->Ks_), 3);
+            }
+            else if (expectKeyword(input_, index_, "d")) {
+                index_ = tryParseFloat(input_, index_, material->d);
+            }
+            else if (expectKeyword(input_, index_, "Ni")) {
+                index_ = tryParseFloat(input_, index_, material->Ni_);
+            }
+            else if (expectKeyword(input_, index_, "Ns")) {
+                index_ = tryParseFloat(input_, index_, material->Ns_);
+            }
+            else if (expectKeyword(input_, index_, "illum")) {
+                index_ = tryParseInt(input_, index_, material->illum);
             }
             else {
                 /* parsre texture image */

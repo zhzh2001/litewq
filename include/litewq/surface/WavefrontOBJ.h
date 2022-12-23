@@ -69,7 +69,6 @@ public:
         return mtl_libraries_;
     }
 private:
-    void skipComment();
     void geom_add_vertex(GlobalVertices &global_vertices);
     void geom_add_vertex_normal(GlobalVertices &global_vertices);
     void geom_add_uv_vertex(GlobalVertices &global_vertices);
@@ -114,6 +113,9 @@ struct MTLMaterial {
     float Ns_; // specular expoent, range between 0 and 1000
     float Ni_ = 1.0f; // refraction, range from 0.001 and 10, 1.0 means no refraction
     float d = 1.0f; // transparent
+    float roughness = -1.0f;       /* `Pr` */
+    float metallic = -1.0f;        /* `Pm` */
+    int illum = -1;
     MTLTexMap tex_map_[int(MTLTexMapType::Count)];
 };
 
@@ -131,6 +133,8 @@ private:
     size_t index_ = 0;
     size_t n_line_ = 1;
 };
+
+
 
 } 
 
