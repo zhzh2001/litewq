@@ -150,8 +150,18 @@ TriMesh::create_sphere(float radius, unsigned int n_slices, unsigned int n_stack
             indices.push_back(dudv_index + n_slices);
             indices.push_back(dudv_index + n_slices + 1);
         }
+        /* Deal with edge triangles*/
+        unsigned int dudv_index = i * n_slices + n_slices - 1;
+        indices.push_back(dudv_index);
+        indices.push_back(dudv_index + 1 - n_slices);
+        indices.push_back(dudv_index + n_slices);
+
+        indices.push_back(dudv_index + 1 - n_slices);
+        indices.push_back(dudv_index + n_slices);
+        indices.push_back(dudv_index + 1);
     }
 
+    CHECK_EQ(indices.size(), (n_stacks - 1) * n_slices * 6) << "Wrong sphere triangle splits";
     auto mesh = std::make_unique<TriMesh>(std::move(vertex), std::move(indices));
     return mesh;
 }
@@ -199,9 +209,11 @@ void TriMesh::render() {
         if (material_map_.count(i)) {
             material_map_.at(i)->updateMaterial();
         }
-        auto &submesh_offset = offsets_[i];
-        glDrawElements(GL_TRIANGLES, submesh_offset.index_size_, GL_UNSIGNED_INT, (void *)(submesh_offset.index_offset_));
+        auto &submesh = offsets_[i];
+        glDrawElements(GL_TRIANGLES, submesh.index_size_,
+                       GL_UNSIGNED_INT, (void *)(submesh.index_offset_ * sizeof(GLuint)));
     }
+    glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
 }
 
@@ -214,13 +226,17 @@ void TriMesh::finishGL() {
 
 
 void TriMesh::renderSubMesh(unsigned int index) {
+    glBindVertexArray(VAO);
     /* if corresponding submesh has material, and bind shader */
     if (material_map_.count(index)) {
         material_map_[index]->updateMaterial();
     }
-    glBindVertexArray(VAO);
-    auto &submesh_offset = offsets_[index];
-    glDrawElements(GL_TRIANGLES, submesh_offset.index_size_, GL_UNSIGNED_INT, (void *)(submesh_offset.index_offset_));
+    auto &submesh = offsets_[index];
+    glDrawElements(GL_TRIANGLES, submesh.index_size_,
+                   GL_UNSIGNED_INT, (void *)(submesh.index_offset_ * sizeof(GLuint)));
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+
 }
 
 void TriMesh::setMaterialShader(unsigned int index, GLShader *shader) {
