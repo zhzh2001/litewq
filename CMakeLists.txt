@@ -25,6 +25,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
 endif()
 
+if (NOT WIN32)
+    option(ASAN "Enable the AddressSanitizer" off)
+endif()
+
+
 find_package(OpenGL REQUIRED)
 add_definitions(${OPENGL_DEFINITIONS})
 

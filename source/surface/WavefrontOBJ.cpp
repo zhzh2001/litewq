@@ -94,14 +94,21 @@ void OBJParser::parse(std::vector<std::unique_ptr<Geometry>> &geometry, GlobalVe
         return;
     } 
     
-    std::getline(input_stream, input_, '\0');
 
     bool state_smooth = false;
     bool state_material_index = -1;
     Geometry *curr_geom = nullptr;
     n_line_ = 1;
-    for (;index_ < input_.size(); ) {
-        n_line_ += skipWhiteSpace(input_, index_);
+    while (input_stream.peek() != EOF) {
+
+        std::getline(input_stream, input_);
+        index_ = 0;
+        n_line_++;
+        /* blank line */
+        if (input_.size() == 0)
+            continue;
+        input_ += '\n'; // for compatible.
+
         if (input_[index_] == '#')
           index_ = skipComment(input_, index_);
         else if (input_[index_] == 'v') {
