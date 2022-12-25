@@ -26,7 +26,7 @@ TriMesh::from_obj(const std::string &obj_file) {
      * normal of vectex. 
      */
 
-    std::vector<Vertex> vertex(n_vertices);
+    std::vector<Vertex> vertex;
     std::vector<unsigned int> indices;
     std::vector<SubMeshArea> offsets;
 
