@@ -26,7 +26,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "")
 endif()
 
 if (NOT WIN32)
-    option(ASAN "Enable the AddressSanitizer" off)
+    option(ASAN "Enable the AddressSanitizer" OFF)
 endif()
 
 

@@ -42,8 +42,9 @@ public:
     };
     std::vector<SubMeshArea> offsets_;
 
+    glm::mat4 model;
     /* Assume all submesh use one shader */
-    GLShader *shader= nullptr;
+    GLShader *shader = nullptr;
 
     /* constructors */
     TriMesh(const std::vector<Vertex> &vertex, const std::vector<unsigned int> &indices, const std::vector<SubMeshArea> &offsets)
