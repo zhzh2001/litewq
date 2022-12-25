@@ -336,6 +336,9 @@ void MTLParser::parse(std::map<std::string, std::unique_ptr<MTLMaterial>> &globa
             else if (expectKeyword(input_, index_, "Ks")) {
                 parse_floats(input_, index_, glm::value_ptr(material->Ks_), 3);
             }
+            else if (expectKeyword(input_, index_, "Ke")) {
+                parse_floats(input_, index_, glm::value_ptr(material->Ke_), 3);
+            }
             else if (expectKeyword(input_, index_, "d")) {
                 index_ = tryParseFloat(input_, index_, material->d);
             }

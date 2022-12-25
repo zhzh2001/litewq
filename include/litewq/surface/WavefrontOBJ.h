@@ -110,6 +110,7 @@ struct MTLMaterial {
     glm::vec3 Ka_; // ambient color of material
     glm::vec3 Kd_; // diffuse color of material
     glm::vec3 Ks_; // specular color of material
+    glm::vec3 Ke_;
     float Ns_; // specular expoent, range between 0 and 1000
     float Ni_ = 1.0f; // refraction, range from 0.001 and 10, 1.0 means no refraction
     float d = 1.0f; // transparent

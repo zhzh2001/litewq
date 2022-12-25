@@ -24,13 +24,16 @@ uniform Material material;
 uniform PointLight light;
 
 void main() {
+    vec4 DiffuseMapTexColor = texture(material.Kd, frag_tex_coord);
+    if(DiffuseMapTexColor.a < 0.1)
+       discard;
     // ambient
-    vec3 La = vec3(texture(material.Kd, frag_tex_coord)) * light.Ia;
+    vec3 La = DiffuseMapTexColor.rgb * light.Ia;
     // diffuse
     vec3 norm = normalize(frag_normal);
     vec3 light_dir = normalize(light.pos - frag_pos);
     float diff_coef = max(dot(norm, light_dir), 0.0f);
-    vec3 Ld = diff_coef * vec3(texture(material.Kd, frag_tex_coord)) * light.Id;
+    vec3 Ld = diff_coef * DiffuseMapTexColor.rgb * light.Id;
     // specular
     vec3 view_dir = normalize(view_pos - frag_pos);
     vec3 half_vec = normalize(light_dir + view_dir);

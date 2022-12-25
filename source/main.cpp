@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 
     phong.Bind();
     auto cube =
-            TriMesh::from_obj(Loader::getAssetPath("model/cube/cube.obj"));
+            TriMesh::from_obj(Loader::getAssetPath("model/tree/Tree1.obj"));
     auto cube_raw = static_cast<TriMesh *>(cube.get());
     cube_raw->initGL();
     std::vector<unsigned int> std_indices = {};
