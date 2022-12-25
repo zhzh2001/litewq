@@ -1,3 +1,4 @@
+#include "litewq/mesh/TriMesh.h"
 #include "litewq/utils/logging.h"
 #include "litewq/surface/WavefrontOBJ.h"
 #include "litewq/platform/OpenGL/GLShader.h"
@@ -203,8 +204,20 @@ int main(int argc, char *argv[])
 	// Create shader
 	GLShader shader(
 		Loader::readFromRelative("shader/simple/vertex.glsl"), 
-		Loader::readFromRelative("shader/simple/frag.glsl")
+		Loader::readFromRelative("shader/simple/opaque_frag.glsl")
 	);
+
+    GLShader scent_shader(
+        Loader::readFromRelative("shader/simple/vertex.glsl"),
+        Loader::readFromRelative("shader/simple/scent_frag.glsl")
+    );
+
+	GLShader phong(
+		Loader::readFromRelative("shader/bling-phong/lighting_map_vertex.glsl"), 
+		Loader::readFromRelative("shader/bling-phong/lighting_map_frag.glsl")
+	);
+
+	
 
 	// Create vertex data
 	float vertices1[] = {
@@ -276,6 +289,14 @@ int main(int argc, char *argv[])
 	Scent scent(generator, shader, 0.1);
 	scent.initGL();
 
+    phong.Bind();
+    auto cube =
+            TriMesh::from_obj(Loader::getAssetPath("model/tree/Tree1.obj"));
+    auto cube_raw = static_cast<TriMesh *>(cube.get());
+    cube_raw->initGL();
+    std::vector<unsigned int> std_indices = {};
+    cube_raw->shader = &phong;
+
 	// Render loop
 	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -328,6 +349,17 @@ int main(int argc, char *argv[])
 
 		// Draw scent
 		scent.render(cameraPos, view, projection, glm::vec4(0, 0, current_width, current_height));
+
+        phong.Bind();
+        phong.updateUniformFloat3("light.pos", glm::vec3(0.0f, 80.0f, 0.0f));
+        phong.updateUniformFloat3("light.Ia", glm::vec3(0.5f, 0.5f, 0.5f));
+        phong.updateUniformFloat3("light.Id", glm::vec3(0.8f, 0.8f, 0.8f));
+        phong.updateUniformFloat3("light.Is", glm::vec3(0.1f, 0.1f, 0.1f));
+        phong.updateUniformFloat3("view_pos", camera.get_position());
+        phong.updateUniformMat4("view", view);
+        phong.updateUniformMat4("projection", projection);
+        phong.updateUniformMat4("model", glm::mat4(1.0f));
+        cube_raw->render();
 
 		// Swap buffers
 		glfwSwapBuffers(window);

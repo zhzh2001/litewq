@@ -2,8 +2,6 @@
 out vec4 frag_color;
 
 struct Material {
-    // vec3 Ka; // ambient coeff.
-    // vec3 Kd; // diffusion coeff.
     sampler2D Kd;
     vec3 Ks; // specular coeff.
     float highlight_decay; // control the size of highlight.
@@ -26,17 +24,20 @@ uniform Material material;
 uniform PointLight light;
 
 void main() {
+    vec4 DiffuseMapTexColor = texture(material.Kd, frag_tex_coord);
+    if(DiffuseMapTexColor.a < 0.1)
+       discard;
     // ambient
-    vec3 La = vec3(texture(material.Kd, frag_tex_coord)) * light.Ia;
+    vec3 La = DiffuseMapTexColor.rgb * light.Ia;
     // diffuse
     vec3 norm = normalize(frag_normal);
     vec3 light_dir = normalize(light.pos - frag_pos);
     float diff_coef = max(dot(norm, light_dir), 0.0f);
-    vec3 Ld = diff_coef * vec3(texture(material.Kd, frag_tex_coord)) * light.Id;
+    vec3 Ld = diff_coef * DiffuseMapTexColor.rgb * light.Id;
     // specular
     vec3 view_dir = normalize(view_pos - frag_pos);
     vec3 half_vec = normalize(light_dir + view_dir);
-    float spec_coef = pow(max(dot(half_vec, norm), 0.0f), material.highlight_decay); 
+    float spec_coef = pow(max(dot(half_vec, norm), 0.0f), material.highlight_decay);
     vec3 Ls = spec_coef * material.Ks * light.Is;
 
     vec3 L = La + Ld + Ls;

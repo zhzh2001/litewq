@@ -1,4 +1,6 @@
 #include "litewq/mesh/TriMesh.h"
+#include "litewq/mesh/Material.h"
+#include "litewq/platform/OpenGL/GLShader.h"
 #include "litewq/surface/WavefrontOBJ.h"
 
 #include <glm/gtx/string_cast.hpp>
@@ -11,11 +13,11 @@ using namespace litewq;
 
 
 std::unique_ptr<Mesh> 
-TriMesh::from_obj(const std::string &filename) {
-    Geometry geometry;
+TriMesh::from_obj(const std::string &obj_file) {
+    std::vector<std::unique_ptr<Geometry>> geometry;
     GlobalVertices global_vertices;
 
-    OBJParser parser(filename);
+    OBJParser parser(obj_file);
     parser.parse(geometry, global_vertices);
 
     size_t n_vertices = global_vertices.vertices.size();
@@ -26,22 +28,48 @@ TriMesh::from_obj(const std::string &filename) {
 
     std::vector<Vertex> vertex(n_vertices);
     std::vector<unsigned int> indices;
-    for (int i = 0; i < n_vertices; ++i) {
-        vertex[i].position_ = global_vertices.vertices[i];
+    std::vector<SubMeshArea> offsets;
+
+    for (const auto &geom: geometry) {
+        SubMeshArea submesh_offset;
+        submesh_offset.name_ = geom->geometry_name_;
+        submesh_offset.index_offset_ = indices.size();
+        for (const auto &face : geom->face_elements_) {
+            for (int n_corners = 0; n_corners < face.corner_count_; ++n_corners) {
+                const auto &corner = geom->face_corners_[face.start_index_ + n_corners];
+                int normal_index = corner.vertex_normal_index;
+                int vertex_index = corner.vert_index;
+                int texture_index = corner.uv_vert_index;
+                /* non-normalized normal vector */
+                /// \attention: duplicate vertex
+                Vertex vert;
+                vert.position_ = global_vertices.vertices[vertex_index];
+                vert.normal_ = global_vertices.vertex_normals[normal_index];
+                vert.texture_coords_ = global_vertices.uv_vertices[texture_index];
+                indices.push_back(vertex.size());
+                vertex.push_back(vert);
+            }
+        }
+        submesh_offset.index_size_ = indices.size() - submesh_offset.index_offset_;
+        offsets.push_back(submesh_offset);
     }
 
-    for (const auto &face : geometry.face_elements_) {
-        for (int n_corners = 0; n_corners < face.corner_count_; ++n_corners) {
-            const auto &corner = geometry.face_corners_[face.start_index_ + n_corners];
-            int normal_index = corner.vertex_normal_index;
-            int vertex_index = corner.vert_index;
-            /* unormalized normal vector */
-            vertex[vertex_index].normal_ += global_vertices.vertex_normals[normal_index];
-            indices.push_back(vertex_index);
+    auto mesh = std::make_unique<TriMesh>(std::move(vertex), std::move(indices), std::move(offsets));
+    /* Deal with MTL*/
+    std::map<std::string, std::unique_ptr<MTLMaterial>> materials;
+    for (const auto& mtl_library : parser.get_mtl_libraries()) {
+        MTLParser mtl_parser(mtl_library, obj_file);
+        mtl_parser.parse(materials);
+    }
+
+    for (unsigned int i = 0; i < geometry.size(); ++i) {
+        const auto &geom = geometry[i];
+        for (const auto &mat_name : geom->material_order_) {
+            auto &mtl = materials.at(mat_name);
+            auto *phong_mat = PhongMaterial::Create(mtl.get(), nullptr);
+            mesh->offsets_[i].material = (Material *)phong_mat;
         }
     }
-
-    auto mesh = std::make_unique<TriMesh>(std::move(vertex), std::move(indices));
     return mesh;
 }
 
@@ -103,10 +131,11 @@ TriMesh::create_sphere(float radius, unsigned int n_slices, unsigned int n_stack
         for (int j = 0; j < n_slices; ++j)
         {
             float theta = dtheta * j;
-            glm::vec3 position = glm::vec3(radius * sin(phi) * cos(theta),
+            vert.position_ = glm::vec3(radius * sin(phi) * cos(theta),
                                            radius * sin(phi) * sin(theta),
                                            radius * cos(phi));
-            vert.position_ = position;
+            /* respect to origin */
+            vert.normal_ = vert.position_;
             vertex.push_back(vert);
         }
     }
@@ -124,8 +153,18 @@ TriMesh::create_sphere(float radius, unsigned int n_slices, unsigned int n_stack
             indices.push_back(dudv_index + n_slices);
             indices.push_back(dudv_index + n_slices + 1);
         }
+        /* Deal with edge triangles*/
+        unsigned int dudv_index = i * n_slices + n_slices - 1;
+        indices.push_back(dudv_index);
+        indices.push_back(dudv_index + 1 - n_slices);
+        indices.push_back(dudv_index + n_slices);
+
+        indices.push_back(dudv_index + 1 - n_slices);
+        indices.push_back(dudv_index + n_slices);
+        indices.push_back(dudv_index + 1);
     }
 
+    CHECK_EQ(indices.size(), (n_stacks - 1) * n_slices * 6) << "Wrong sphere triangle splits";
     auto mesh = std::make_unique<TriMesh>(std::move(vertex), std::move(indices));
     return mesh;
 }
@@ -167,8 +206,16 @@ void TriMesh::initGL() {
 }
 
 void TriMesh::render() {
+    GLShader *current = shader ? shader : GLShader::GetCurrentShader();
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLE_FAN, global_indices_.size(), GL_UNSIGNED_INT, 0);
+    for (unsigned int i = 0; i < offsets_.size(); ++i) {
+        /* if corresponding submesh has material */
+        auto &submesh = offsets_[i];
+        if (submesh.material != nullptr)
+            submesh.material->updateMaterial(current);
+        glDrawElements(GL_TRIANGLES, submesh.index_size_,
+                       GL_UNSIGNED_INT, (void *)(submesh.index_offset_ * sizeof(GLuint)));
+    }
     glBindVertexArray(0);
 }
 
@@ -178,3 +225,18 @@ void TriMesh::finishGL() {
     glDeleteVertexArrays(1, &VAO);
 }
 
+
+
+void TriMesh::renderSubMesh(unsigned int index) {
+    GLShader *current = shader ? shader : GLShader::GetCurrentShader();
+    glBindVertexArray(VAO);
+    /* if corresponding submesh has material, and bind shader */
+    auto &submesh = offsets_[index];
+    if (submesh.material != nullptr)
+        submesh.material->updateMaterial(current);
+    glDrawElements(GL_TRIANGLES, submesh.index_size_,
+                   GL_UNSIGNED_INT, (void *)(submesh.index_offset_ * sizeof(GLuint)));
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+
+}
