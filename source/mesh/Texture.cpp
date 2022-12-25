@@ -53,8 +53,8 @@ void Texture::LoadTexture(const std::string &file_path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, DEFAULT_TEXTURE_FILTER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, DEFAULT_TEXTURE_FILTER);
     /* Use modern way to generate NPOT textures */
-    GL_CHECK(glTexStorage2D(GL_TEXTURE_2D, 2, internal_format, width, height));
-    // glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+    GL_CHECK(glTexStorage2D(GL_TEXTURE_2D, 5, internal_format, width, height));
+    // GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data));
     GL_CHECK(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data));
 
     /// \attention: auto generate mipmap 

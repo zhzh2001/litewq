@@ -14,5 +14,5 @@ void main()
     float dist = length(uv);
     float radius = length(outer - center);
     float alpha = 1.0 - smoothstep(0, radius, dist);
-    FragColor = vec4(vec3(texture(texture1, TexCoord)), alpha);
+    FragColor = vec4(0.5, 0.5, 0.5, alpha);
 }

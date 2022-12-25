@@ -29,9 +29,6 @@ TriMesh::from_obj(const std::string &obj_file) {
     std::vector<Vertex> vertex(n_vertices);
     std::vector<unsigned int> indices;
     std::vector<SubMeshArea> offsets;
-    for (int i = 0; i < n_vertices; ++i) {
-        vertex[i].position_ = global_vertices.vertices[i];
-    }
 
     for (const auto &geom: geometry) {
         SubMeshArea submesh_offset;
@@ -42,9 +39,15 @@ TriMesh::from_obj(const std::string &obj_file) {
                 const auto &corner = geom->face_corners_[face.start_index_ + n_corners];
                 int normal_index = corner.vertex_normal_index;
                 int vertex_index = corner.vert_index;
-                /* unormalized normal vector */
-                vertex[vertex_index].normal_ += global_vertices.vertex_normals[normal_index];
-                indices.push_back(vertex_index);
+                int texture_index = corner.uv_vert_index;
+                /* non-normalized normal vector */
+                /// \attention: duplicate vertex
+                Vertex vert;
+                vert.position_ = global_vertices.vertices[vertex_index];
+                vert.normal_ = global_vertices.vertex_normals[normal_index];
+                vert.texture_coords_ = global_vertices.uv_vertices[texture_index];
+                indices.push_back(vertex.size());
+                vertex.push_back(vert);
             }
         }
         submesh_offset.index_size_ = indices.size() - submesh_offset.index_offset_;
