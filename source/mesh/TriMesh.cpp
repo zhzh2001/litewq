@@ -64,7 +64,7 @@ TriMesh::from_obj(const std::string &obj_file) {
         for (const auto &mat_name : geom->material_order_) {
             auto &mtl = materials.at(mat_name);
             auto *phong_mat = PhongMaterial::Create(mtl.get(), nullptr);
-            mesh->material_map_[i] = (Material *)phong_mat;
+            mesh->offsets_[i].material = (Material *)phong_mat;
         }
     }
     return mesh;
@@ -203,17 +203,16 @@ void TriMesh::initGL() {
 }
 
 void TriMesh::render() {
+    GLShader *current = shader ? shader : GLShader::GetCurrentShader();
     glBindVertexArray(VAO);
     for (unsigned int i = 0; i < offsets_.size(); ++i) {
         /* if corresponding submesh has material */
-        if (material_map_.count(i)) {
-            material_map_.at(i)->updateMaterial();
-        }
         auto &submesh = offsets_[i];
+        if (submesh.material != nullptr)
+            submesh.material->updateMaterial(current);
         glDrawElements(GL_TRIANGLES, submesh.index_size_,
                        GL_UNSIGNED_INT, (void *)(submesh.index_offset_ * sizeof(GLuint)));
     }
-    glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
 }
 
@@ -226,21 +225,15 @@ void TriMesh::finishGL() {
 
 
 void TriMesh::renderSubMesh(unsigned int index) {
+    GLShader *current = shader ? shader : GLShader::GetCurrentShader();
     glBindVertexArray(VAO);
     /* if corresponding submesh has material, and bind shader */
-    if (material_map_.count(index)) {
-        material_map_[index]->updateMaterial();
-    }
     auto &submesh = offsets_[index];
+    if (submesh.material != nullptr)
+        submesh.material->updateMaterial(current);
     glDrawElements(GL_TRIANGLES, submesh.index_size_,
                    GL_UNSIGNED_INT, (void *)(submesh.index_offset_ * sizeof(GLuint)));
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
 
-}
-
-void TriMesh::setMaterialShader(unsigned int index, GLShader *shader) {
-    auto &submesh = offsets_[index];
-    LOG(INFO) << "Set submesh index: " << index << " Shader: " << "\n";
-    material_map_.at(index)->shader = shader;
 }

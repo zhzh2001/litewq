@@ -23,25 +23,16 @@ PhongMaterial *PhongMaterial::Create(MTLMaterial *mtl,
 }
 
 
-void PhongMaterial::updateBareMaterial() {
-    shader->updateUniformFloat3("material.Ka", Ka_);
-    shader->updateUniformFloat3("material.Kd", Kd_);
-    shader->updateUniformFloat3("material.Ks", Ks_);
-    shader->updateUniformFloat("material.highlight_decay", decay_);
-
-}
-
-
-void PhongMaterial::updateMaterial() {
+void PhongMaterial::updateMaterial(GLShader *shader) {
     shader->Bind();
     if (diffuse_tex != nullptr) {
-        shader->updateUniformInt("material.diffuse", diffuse_tex->texture_unit_id_);
+        shader->updateUniformInt("material.Kd", diffuse_tex->texture_unit_id_);
         diffuse_tex->BindTexture();
     } else {
-        shader->updateUniformFloat3("material.Kd", Ks_);
+        shader->updateUniformFloat3("material.Kd", Kd_);
     }
     if (spec_tex != nullptr) {
-        shader->updateUniformInt("material.specular", spec_tex->texture_unit_id_);
+        shader->updateUniformInt("material.Ks", spec_tex->texture_unit_id_);
         spec_tex->BindTexture();
     } else {
         shader->updateUniformFloat3("material.Ks", Ks_);

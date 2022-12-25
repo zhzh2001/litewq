@@ -7,7 +7,7 @@
 
 namespace litewq {
 
-char const *glGetErrorString(GLenum const err) noexcept {
+inline char const *glGetErrorString(GLenum const err) noexcept {
     switch (err) {
         // opengl 2 errors (8)
         case GL_NO_ERROR:
@@ -32,11 +32,16 @@ char const *glGetErrorString(GLenum const err) noexcept {
     }
 }
 
+/* You can define GL_NO_CHECK to disable check */
+#ifndef GL_NO_CHECK
 #define GL_CHECK(func) {                                    \
     func;                                                   \
     GLenum error = glGetError();                            \
     CHECK_EQ(error, GL_NO_ERROR) << glGetErrorString(error);\
 }
+#else
+#define GL_CHECK(func) func;
+#endif
 
 } // end namespace litewq
 

@@ -27,7 +27,6 @@ protected:
 
 public:
     MaterialType material_type_;
-    GLShader *shader;
 
     template <typename T> bool is() {
         return material_type_ == std::remove_pointer<T>::mat_type_tag;
@@ -42,7 +41,7 @@ public:
 
     Material() = default;
     
-    virtual void updateMaterial();
+    virtual void updateMaterial(GLShader *shader);
     virtual void deactivateMaterial();
 
 };
@@ -59,8 +58,7 @@ public:
     static PhongMaterial *Create(MTLMaterial *mtl, 
                                 Context *context);
     
-    void updateBareMaterial();
-    void updateMaterial() override;
+    void updateMaterial(GLShader *shader) override;
 
     glm::vec3 Ka_ = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 Kd_ = glm::vec3(0.8f, 0.8f, 0.8f);

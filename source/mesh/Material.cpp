@@ -3,7 +3,7 @@
 
 using namespace litewq;
 
-void Material::updateMaterial() {
+void Material::updateMaterial(GLShader *shader) {
     litewq_unreachable("Not implemented updateMaterial!");
 }
 

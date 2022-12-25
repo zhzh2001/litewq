@@ -2,8 +2,6 @@
 out vec4 frag_color;
 
 struct Material {
-    // vec3 Ka; // ambient coeff.
-    // vec3 Kd; // diffusion coeff.
     sampler2D Kd;
     vec3 Ks; // specular coeff.
     float highlight_decay; // control the size of highlight.
@@ -36,7 +34,7 @@ void main() {
     // specular
     vec3 view_dir = normalize(view_pos - frag_pos);
     vec3 half_vec = normalize(light_dir + view_dir);
-    float spec_coef = pow(max(dot(half_vec, norm), 0.0f), material.highlight_decay); 
+    float spec_coef = pow(max(dot(half_vec, norm), 0.0f), material.highlight_decay);
     vec3 Ls = spec_coef * material.Ks * light.Is;
 
     vec3 L = La + Ld + Ls;

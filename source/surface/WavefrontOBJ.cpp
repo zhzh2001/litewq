@@ -309,10 +309,10 @@ void MTLParser::parse(std::map<std::string, std::unique_ptr<MTLMaterial>> &globa
     MTLMaterial *material = nullptr;
     for (;index_ < input_.size(); ) {
         n_line_ += skipWhiteSpace(input_, index_);
+        if (input_[index_] == '#')
+            index_ = skipComment(input_, index_);
         if (index_ >= input_.size())
             break;
-        if (input_[index_] == '#')
-          index_ = skipComment(input_, index_);
         /* expect a new material */
         if (expectKeyword(input_, index_, "newmtl")) {
             index_ = tryParseString(input_, index_, mtl_name);

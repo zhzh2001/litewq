@@ -31,6 +31,13 @@ namespace litewq
 		void process_mouse_scroll(float y_offset);
 
 		void toggle_fly_mode();
+        glm::vec3 get_view_pos() const {
+            return position_;
+        }
+        glm::vec3 get_view_dir() const {
+            return look_front_;
+        }
+
 
 	private:
 		glm::vec3 position_;

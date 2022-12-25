@@ -12,6 +12,8 @@ public:
     GLShader(const std::string &vertex_src, const std::string &frag_src);
     ~GLShader();
 
+    static GLShader *GetCurrentShader();
+
     void Bind() const;
     void UnBind() const;
 

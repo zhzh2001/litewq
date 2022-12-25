@@ -4,6 +4,7 @@
 #include "litewq/utils/logging.h"
 
 #include "glad/glad.h"
+#include "litewq/platform/OpenGL/GLErrorHandle.h"
 #include "stb/stb_image.h"
 using namespace litewq;
 
@@ -31,13 +32,19 @@ void Texture::LoadTexture(const std::string &file_path) {
         &width, &height, &channels, 0
     );
     CHECK(data) << "Failed to load texture: " << file_path;
-    GLenum format;
-    if (channels == 1)
-        format = GL_RED;
-    else if (channels == 3)
+    GLenum format, internal_format;
+    if (channels == 1) {
+        format = GL_ALPHA;
+        internal_format = GL_ALPHA8;
+    }
+    else if (channels == 3) {
         format = GL_RGB;
-    else if (channels == 4)
+        internal_format = GL_RGB8;
+    }
+    else if (channels == 4) {
         format = GL_RGBA;
+        internal_format = GL_RGBA8;
+    }
 
     glGenTextures(1, &texture_id_);
     glBindTexture(GL_TEXTURE_2D, texture_id_);
@@ -45,10 +52,14 @@ void Texture::LoadTexture(const std::string &file_path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, DEFAULT_TEXTURE_WRAP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, DEFAULT_TEXTURE_FILTER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, DEFAULT_TEXTURE_FILTER);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    /* Use modern way to generate NPOT textures */
+    GL_CHECK(glTexStorage2D(GL_TEXTURE_2D, 2, internal_format, width, height));
+    // glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+    GL_CHECK(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data));
+
     /// \attention: auto generate mipmap 
     /// as we set mipmap level in glTexImage2D is zero (basic level).
-    glGenerateMipmap(GL_TEXTURE_2D);
+    GL_CHECK(glGenerateMipmap(GL_TEXTURE_2D));
     LOG(INFO) << "ID: " << texture_id_ << " Unit: " << texture_unit_id_
             << " Load texture: " << file_path 
             << " height: " << height << " width: " << width;
@@ -57,7 +68,6 @@ void Texture::LoadTexture(const std::string &file_path) {
 }
 
 void Texture::BindTexture() const {
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture_id_);
-    // LOG(INFO) << "Bind texture ID: " <<  texture_id_;
+    GL_CHECK(glActiveTexture(GL_TEXTURE0 + texture_unit_id_));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, texture_id_));
 }

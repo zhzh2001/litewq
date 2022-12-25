@@ -37,11 +37,13 @@ public:
         std::string name_;
         /* start */
         unsigned int index_offset_;
-        unsigned int index_size_; 
+        unsigned int index_size_;
+        Material * material = nullptr;
     };
     std::vector<SubMeshArea> offsets_;
 
-    std::map<unsigned int, Material *> material_map_;
+    /* Assume all submesh use one shader */
+    GLShader *shader= nullptr;
 
     /* constructors */
     TriMesh(const std::vector<Vertex> &vertex, const std::vector<unsigned int> &indices, const std::vector<SubMeshArea> &offsets)
