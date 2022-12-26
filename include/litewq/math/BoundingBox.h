@@ -150,7 +150,7 @@ Expand(const Bounds3 &b, float delta) {
 }
 
 inline Bounds3
-Transform(const Bounds3 &b, glm::mat4 &M)  {
+Transform(const Bounds3 &b, const glm::mat4 &M)  {
     Bounds3 ret(glm::vec3(M * glm::vec4(b.pMin.x, b.pMin.y, b.pMin.z, 1.0f)));
     ret = Union(ret, glm::vec3(M * glm::vec4(b.pMax.x, b.pMin.y, b.pMin.z, 1.0f)));
     ret = Union(ret, glm::vec3(M * glm::vec4(b.pMin.x, b.pMax.y, b.pMin.z, 1.0f)));

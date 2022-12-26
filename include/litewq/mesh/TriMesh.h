@@ -1,6 +1,8 @@
 #pragma once
 #include "litewq/mesh/Mesh.h"
 #include "litewq/mesh/Material.h"
+#include "litewq/math/BVH.h"
+#include "litewq/math/Shape.h"
 #include "litewq/platform/OpenGL/GLShader.h"
 #include "litewq/surface/Bezier.h"
 #include <glm/glm.hpp>
@@ -42,9 +44,16 @@ public:
     };
     std::vector<SubMeshArea> offsets_;
 
-    glm::mat4 model;
-    /* Assume all submesh use one shader */
     GLShader *shader = nullptr;
+
+    glm::mat4 model {glm::mat4(1.0f)};
+    /* Assume all submesh use one shader */
+    BVHUtils *bvh;
+    Bounds3 ObjectBound;
+    std::vector<Triangle *> shapes;
+    Bounds3 WorldBound() const {
+        return Transform(ObjectBound, model);
+    }
 
     /* constructors */
     TriMesh(const std::vector<Vertex> &vertex, const std::vector<unsigned int> &indices, const std::vector<SubMeshArea> &offsets)

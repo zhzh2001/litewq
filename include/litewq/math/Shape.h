@@ -11,6 +11,9 @@ class Bounds3;
 
 class Shape {
 public:
+    Shape() = delete;
+    explicit Shape(glm::mat4 *ObjectToWorld) :
+            ObjectToWorld(ObjectToWorld) {}
     virtual Bounds3 ObjectBound() = 0;
     virtual Bounds3 WorldBound();
 
@@ -19,7 +22,9 @@ public:
 
 class Triangle : public  Shape {
 public:
-
+    Triangle() = delete;
+    Triangle(glm::mat4 *ObjectToWorld, TriMesh *Mesh, int *V) :
+            Shape(ObjectToWorld), mesh(Mesh), v(V) {}
     virtual Bounds3 ObjectBound() override;
     TriMesh *mesh;
     const int *v;

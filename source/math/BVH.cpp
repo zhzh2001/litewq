@@ -32,6 +32,7 @@ static BVHNode *BuildBVH(std::vector<Shape *> shapes) {
             centroidBounds =
                     Union(centroidBounds, shape->WorldBound());
         }
+        /* Estimate SAH */
         int dim = centroidBounds.maxExtent();
         switch (dim) {
             case 0:
@@ -71,6 +72,8 @@ static BVHNode *BuildBVH(std::vector<Shape *> shapes) {
     return Node;
 }
 
-BVHUtils::BVHUtils(std::vector<Shape *> shapes, unsigned int maxShapeInNode) {
+BVHUtils::BVHUtils(std::vector<Shape *> shapes, unsigned int maxShapeInNode) :
+    maxShapeInNode(maxShapeInNode), shapes(std::move(shapes))
+{
 
 }
