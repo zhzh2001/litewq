@@ -48,7 +48,7 @@ public:
 
     glm::mat4 model {glm::mat4(1.0f)};
     /* Assume all submesh use one shader */
-    BVHUtils *bvh;
+    // BVHUtils *bvh;
     Bounds3 ObjectBound;
     std::vector<Triangle *> shapes;
     Bounds3 WorldBound() const {

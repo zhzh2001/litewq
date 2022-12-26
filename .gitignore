@@ -1,12 +1,13 @@
 # Test Assets Files
 test/
+assets/model/tree
 
 # Config
 .vscode/
 .idea/
 
 # Build
-build/
+build*/
 .cache/
 *.aux
 *.log

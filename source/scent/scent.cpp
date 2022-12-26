@@ -40,10 +40,10 @@ void Scent::render(glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, g
 		scent_[i] += wind_ * (float)(current_time - last_time_) * 4.0f;
 
 	// render grounded track
-	for (int i = 0; i < distance_; i++)
-	{
-		glm::vec3 position = source_ + direction_ * (1.0f * i);
-		glm::vec3 center = glm::project(position, view, projection, glm::vec4(0, 0, 800, 600));
+    shader_.Bind();
+    for (int i = 0; i < distance_; i++) {
+        glm::vec3 position = source_ + direction_ * (1.0f * i);
+        glm::vec3 center = glm::project(position, view, projection, glm::vec4(0, 0, 800, 600));
 		glm::vec3 outer = glm::project(position + direction_ * 0.1f, view, projection, glm::vec4(0, 0, 800, 600));
 		shader_.updateUniformMat4("model", glm::translate(glm::mat4(1.0f), position));
 		shader_.updateUniformFloat3("center", center);
@@ -54,10 +54,10 @@ void Scent::render(glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, g
 		std::uniform_real_distribution<float> emit_distribution(0.0f, 1.0f);
 		if (emit_distribution(generator_) > std::exp(-0.05 * (current_time - last_time_)))
 			scent_.push_back(position + wind_ + glm::vec3(0, 0.6, 0));
-	}
+    }
 
-	// render floating scent
-	std::vector<std::pair<float, int>> scent_distance;
+    // render floating scent
+    std::vector<std::pair<float, int>> scent_distance;
 	for (int i = 0; i < scent_.size(); i++)
 		scent_distance.push_back(std::make_pair(glm::distance(scent_[i], camera_pos), i));
 	glEnable(GL_BLEND);
@@ -72,9 +72,10 @@ void Scent::render(glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, g
 		mesh_->render();
 	}
 	glDisable(GL_BLEND);
+    shader_.UnBind();
 
-	if (scent_.size() > 1000)
-		scent_.erase(scent_.begin(), scent_.begin() + 100);
+    if (scent_.size() > 1000)
+        scent_.erase(scent_.begin(), scent_.begin() + 100);
 
-	last_time_ = current_time;
+    last_time_ = current_time;
 }

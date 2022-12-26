@@ -4,6 +4,7 @@
 
 #include "litewq/math/BasicFunction.h"
 
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <limits>
 

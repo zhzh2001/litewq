@@ -240,8 +240,8 @@ int main(int argc, char *argv[])
 
 	// Create scent
 	std::default_random_engine generator(time(NULL));
-	Scent scent(generator, shader, 0.1);
-	scent.initGL();
+    Scent scent(generator, scent_shader, 0.1);
+    scent.initGL();
 
     auto tree =
             TriMesh::from_obj(Loader::getAssetPath("model/tree/Tree1.obj"));
@@ -249,11 +249,11 @@ int main(int argc, char *argv[])
     tree_raw->initGL();
     tree_raw->shader = &phong;
 
-    auto wolf =
-            TriMesh::from_obj(Loader::getAssetPath("model/wolf/wolf.obj"));
-    auto wolf_raw = static_cast<TriMesh *>(wolf.get());
-    wolf_raw->initGL();
-    wolf_raw->shader = &phong;
+    // auto wolf =
+    //         TriMesh::from_obj(Loader::getAssetPath("model/wolf/wolf.obj"));
+    // auto wolf_raw = static_cast<TriMesh *>(wolf.get());
+    // wolf_raw->initGL();
+    // wolf_raw->shader = &phong;
 
     /* Shadow mapping, depth frame buffer and stored in texture. */
     unsigned int DepthMapFBO, DepthMap;
@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
 
         glm::mat4 wolf_model2world = glm::lookAt(wolf_pos, wolf_pos + head_dir, ground_up_vec);
         phong.updateUniformMat4("model", glm::mat4(1.0f));
-        wolf_raw->render();
+        // wolf_raw->render();
 
         phong.updateUniformMat4("model", glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .5f)));
         tree_raw->render();
