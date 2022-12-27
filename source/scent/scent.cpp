@@ -39,8 +39,7 @@ void Scent::render(glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, g
 	for (int i = 0; i < scent_.size(); i++)
 		scent_[i] += wind_ * (float)(current_time - last_time_) * 4.0f;
 
-	// render grounded track
-    shader_.Bind();
+    // render grounded track
     for (int i = 0; i < distance_; i++) {
         glm::vec3 position = source_ + direction_ * (1.0f * i);
         glm::vec3 center = glm::project(position, view, projection, glm::vec4(0, 0, 800, 600));
@@ -71,8 +70,7 @@ void Scent::render(glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, g
 		shader_.updateUniformFloat3("outer", outer);
 		mesh_->render();
 	}
-	glDisable(GL_BLEND);
-    shader_.UnBind();
+    glDisable(GL_BLEND);
 
     if (scent_.size() > 1000)
         scent_.erase(scent_.begin(), scent_.begin() + 100);
