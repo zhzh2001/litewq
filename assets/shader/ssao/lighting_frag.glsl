@@ -31,11 +31,9 @@ void main() {
 	float ao = texture(ssao, frag_tex_coord).r;
 
 	// calculate lighting as usual
-    vec4 DiffuseMapTexColor = texture(material.Kd, frag_tex_coord);
-    if(DiffuseMapTexColor.a < 0.1)
-       discard;
+    vec4 DiffuseMapTexColor = vec4(frag_albedo, 1.0f);
     // ambient
-    vec3 La = DiffuseMapTexColor.rgb * light.Ia;
+    vec3 La = DiffuseMapTexColor.rgb * light.Ia * ao;
     // diffuse
     vec3 norm = normalize(frag_normal);
     vec3 light_dir = normalize(light.pos - frag_pos);

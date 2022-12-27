@@ -265,6 +265,12 @@ int main(int argc, char *argv[])
     lighting.updateUniformInt("gNormal", 1);
     lighting.updateUniformInt("gAlbedo", 2);
     lighting.updateUniformInt("ssao", 3);
+    lighting.updateUniformFloat3("light.pos", glm::vec3(0.0f, 100.0f, 0.0f));
+    lighting.updateUniformFloat3("light.Ia", glm::vec3(0.5f, 0.5f, 0.5f));
+    lighting.updateUniformFloat3("light.Id", glm::vec3(1.0f, 1.0f, 1.0f));
+    lighting.updateUniformFloat3("light.Is", glm::vec3(0.1f, 0.1f, 0.1f));
+    lighting.updateUniformFloat3("material.Ks", glm::vec3(.5f, .5f, .5f));
+    lighting.updateUniformFloat("material.highlight_decay", 200.f);
 
     // another square
     float vertices2[] = {
@@ -441,11 +447,6 @@ int main(int argc, char *argv[])
         glm::mat4 light_projection = glm::ortho(-10.f, 10.f, -10.f, 10.f, 1.5f, 7.5f);
         glm::mat4 light_view = glm::lookAt(light_pos, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
         glm::mat4 world2light = light_projection * light_view;
-        phong.updateUniformFloat3("light.pos", glm::vec3(0.0f, 100.0f, 0.0f));
-        phong.updateUniformFloat3("light.Ia", glm::vec3(0.5f, 0.5f, 0.5f));
-        phong.updateUniformFloat3("light.Id", glm::vec3(1.0f, 1.0f, 1.0f));
-        phong.updateUniformFloat3("light.Is", glm::vec3(0.1f, 0.1f, 0.1f));
-        phong.updateUniformFloat3("view_pos", camera.get_position());
 
         glm::mat4 view = camera.get_view_matrix();
         glm::mat4 projection = glm::perspective(camera.get_zoom(), (float) window_width / (float) window_height, 0.1f, 100.0f);
@@ -457,8 +458,6 @@ int main(int argc, char *argv[])
         // Draw 21x21 tiles around camera, manually assign material
         glBindTexture(GL_TEXTURE_2D, texGrass);
         glBindVertexArray(VAO2);
-        phong.updateUniformFloat3("material.Ks", glm::vec3(.5f, .5f, .5f));
-        phong.updateUniformFloat("material.highlight_decay", 200.f);
         glm::vec3 cameraPos = camera.get_position();
         for (int i = -10; i <= 10; i++)
             for (int j = -10; j <= 10; j++) {
@@ -530,7 +529,7 @@ int main(int argc, char *argv[])
         glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
         glActiveTexture(GL_TEXTURE3);// add extra SSAO texture to lighting pass
         glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
-        lighting.updateUniformFloat3("viewPos", camera.get_position());
+        lighting.updateUniformFloat3("view_pos", camera.get_position());
         renderQuad();
 
         // Swap buffers

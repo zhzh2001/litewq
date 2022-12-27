@@ -7,6 +7,8 @@ in vec2 frag_tex_coord;
 in vec3 frag_pos;
 in vec3 frag_normal;
 
+uniform sampler2D tex;
+
 const float NEAR = 0.1f;
 const float FAR = 100.0f;
 float LinearizeDepth(float depth)
@@ -19,5 +21,5 @@ void main()
 {
 	gPositionDepth = vec4(frag_pos, LinearizeDepth(frag_tex_coord.x));
 	gNormal = normalize(frag_normal);
-	gAlbedoSpec = vec4(1.0);
+	gAlbedoSpec = texture(tex, frag_tex_coord);
 }
