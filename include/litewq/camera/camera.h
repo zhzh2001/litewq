@@ -24,7 +24,6 @@ namespace litewq
 		glm::mat4 get_view_matrix() const;
 		float get_zoom() const;
 		glm::vec3 get_position() const;
-		glm::vec3 get_front() const;
 
 		void process_keyboard(Camera_Movement direction, float delta_time);
 		void process_mouse_movement(float x_offset, float y_offset, bool constrain_pitch = true);
@@ -36,6 +35,9 @@ namespace litewq
         }
         glm::vec3 get_view_dir() const {
             return look_front_;
+        }
+        void set_pos(const glm::vec3 &pos) {
+            position_ = pos;
         }
 
 

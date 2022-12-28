@@ -22,6 +22,11 @@ inline int choose_nk(int n, int k) {
 
 inline float bernstein_poly(int n, int i, float u) {
     return choose_nk(n, i) * powf(u, i) * powf(1 - u, n - i); 
-} 
+}
+
+template <typename T>
+inline T Lerp(float t, T v1, T v2) {
+    return (1 - t) * v1 + t * v2;
+}
 
 } // end namespace litewq

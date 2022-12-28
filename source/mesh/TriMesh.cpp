@@ -30,6 +30,8 @@ TriMesh::from_obj(const std::string &obj_file) {
     std::vector<unsigned int> indices;
     std::vector<SubMeshArea> offsets;
 
+    glm::vec3 max_bbox = glm::vec3(-INFINITY, -INFINITY, -INFINITY);
+    glm::vec3 min_bbox = glm::vec3(INFINITY, INFINITY, INFINITY);
     for (const auto &geom: geometry) {
         SubMeshArea submesh_offset;
         submesh_offset.name_ = geom->geometry_name_;
@@ -46,6 +48,10 @@ TriMesh::from_obj(const std::string &obj_file) {
                 vert.position_ = global_vertices.vertices[vertex_index];
                 vert.normal_ = global_vertices.vertex_normals[normal_index];
                 vert.texture_coords_ = global_vertices.uv_vertices[texture_index];
+                /* update object bounding box */
+                max_bbox = glm::max(max_bbox, vert.position_);
+                min_bbox = glm::min(min_bbox, vert.position_);
+
                 indices.push_back(vertex.size());
                 vertex.push_back(vert);
             }
@@ -55,6 +61,8 @@ TriMesh::from_obj(const std::string &obj_file) {
     }
 
     auto mesh = std::make_unique<TriMesh>(std::move(vertex), std::move(indices), std::move(offsets));
+    mesh->ObjectBound = Bounds3(min_bbox, max_bbox);
+
     /* Deal with MTL*/
     std::map<std::string, std::unique_ptr<MTLMaterial>> materials;
     for (const auto& mtl_library : parser.get_mtl_libraries()) {
@@ -70,6 +78,7 @@ TriMesh::from_obj(const std::string &obj_file) {
             mesh->offsets_[i].material = (Material *)phong_mat;
         }
     }
+
     return mesh;
 }
 
@@ -205,9 +214,21 @@ void TriMesh::initGL() {
     glBindVertexArray(0);
 }
 
+void TriMesh::buildBVH() {
+    std::vector<Shape *> shapes;
+    CHECK_GT(global_indices_.size(), 3)
+        << "The Triangle Mesh should have at least 1 triangle to build BVH";
+    for (unsigned int i = 0; i < global_indices_.size(); i+=3) {
+        auto *triangle = new Triangle(&model, this, &global_indices_[i]);
+        shapes.push_back((Shape *)triangle);
+    }
+    bvh = new BVHUtils(shapes);
+}
+
 void TriMesh::render() {
     GLShader *current = shader ? shader : GLShader::GetCurrentShader();
     glBindVertexArray(VAO);
+    current->updateUniformMat4("model", model);
     for (unsigned int i = 0; i < offsets_.size(); ++i) {
         /* if corresponding submesh has material */
         auto &submesh = offsets_[i];

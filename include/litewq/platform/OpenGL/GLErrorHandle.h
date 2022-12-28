@@ -43,6 +43,15 @@ inline char const *glGetErrorString(GLenum const err) noexcept {
 #define GL_CHECK(func) func;
 #endif
 
+#ifndef GL_NO_CHECK
+#define GL_PEEK_ERROR {                                      \
+    GLenum error = glGetError();                             \
+    CHECK_EQ(error, GL_NO_ERROR) << glGetErrorString(error); \
+}
+#else
+#define GL_PEEK_ERROR
+#endif
+
 } // end namespace litewq
 
 #endif//LITEWQ_GLERRORHANDLE_H
