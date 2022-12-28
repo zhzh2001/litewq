@@ -1,5 +1,5 @@
 #version 330 core
-layout (location = 0) out vec4 gPositionDepth;
+layout (location = 0) out vec3 gPositionDepth;
 layout (location = 1) out vec3 gNormal;
 layout (location = 2) out vec4 gAlbedoSpec;
 
@@ -19,7 +19,7 @@ float LinearizeDepth(float depth)
 
 void main()
 {
-	gPositionDepth = vec4(frag_pos, LinearizeDepth(frag_tex_coord.x));
+	gPositionDepth = frag_pos;
 	gNormal = normalize(frag_normal);
 	gAlbedoSpec = texture(tex, frag_tex_coord);
 }

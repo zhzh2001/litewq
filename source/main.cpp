@@ -236,11 +236,11 @@ int main(int argc, char *argv[])
 	);
 
     GLShader scent_shader(
-            Loader::readFromRelative("shader/bling-phong/lighting_map_vertex.glsl"),
+            Loader::readFromRelative("shader/ssao/geom_vertex.glsl"),
             Loader::readFromRelative("shader/ssao/geom_frag.glsl"));
 
     GLShader phong(
-            Loader::readFromRelative("shader/bling-phong/lighting_map_vertex.glsl"),
+            Loader::readFromRelative("shader/ssao/geom_vertex.glsl"),
             Loader::readFromRelative("shader/ssao/geom_frag.glsl"));
 
     GLShader ssao(
@@ -265,12 +265,6 @@ int main(int argc, char *argv[])
     lighting.updateUniformInt("gNormal", 1);
     lighting.updateUniformInt("gAlbedo", 2);
     lighting.updateUniformInt("ssao", 3);
-    lighting.updateUniformFloat3("light.pos", glm::vec3(0.0f, 100.0f, 0.0f));
-    lighting.updateUniformFloat3("light.Ia", glm::vec3(0.5f, 0.5f, 0.5f));
-    lighting.updateUniformFloat3("light.Id", glm::vec3(1.0f, 1.0f, 1.0f));
-    lighting.updateUniformFloat3("light.Is", glm::vec3(0.1f, 0.1f, 0.1f));
-    lighting.updateUniformFloat3("material.Ks", glm::vec3(.5f, .5f, .5f));
-    lighting.updateUniformFloat("material.highlight_decay", 200.f);
 
     // another square
     float vertices2[] = {
@@ -285,10 +279,6 @@ int main(int argc, char *argv[])
     // Create texture
     unsigned int texContainer = loadTexture("assets/tex/container.jpg");
     unsigned int texGrass = loadTexture("assets/tex/grass.jpg");
-
-    // Choose texture unit
-    shader.Bind();
-    shader.updateUniformInt("texture1", 0);
 
     // Create scent
     std::default_random_engine generator(time(NULL));
@@ -341,18 +331,20 @@ int main(int argc, char *argv[])
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height, 0, GL_RGB, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
 
     glGenTextures(1, &gNormal);
     glBindTexture(GL_TEXTURE_2D, gNormal);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
 
     glGenTextures(1, &gAlbedoSpec);
     glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_width, window_height, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
@@ -418,7 +410,7 @@ int main(int argc, char *argv[])
     GLuint noiseTexture;
     glGenTextures(1, &noiseTexture);
     glBindTexture(GL_TEXTURE_2D, noiseTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -493,7 +485,6 @@ int main(int argc, char *argv[])
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // 2. Create SSAO texture
-        // we render it directly to the screen for now
         glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
         glClear(GL_COLOR_BUFFER_BIT);
         ssao.Bind();
@@ -520,7 +511,13 @@ int main(int argc, char *argv[])
 
         // 4. Lighting pass: traditional deferred Blinn-Phong lighting with added screen-space ambient occlusion
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_BLEND);
         lighting.Bind();
+        glm::vec3 lightPosView = glm::vec3(view * glm::vec4(light_pos, 1.0));
+        lighting.updateUniformFloat3("light.Position", lightPosView);
+        lighting.updateUniformFloat3("light.Color", glm::vec3(1.0f, 1.0f, 1.0f));
+        lighting.updateUniformFloat("light.Linear", 0.09);
+        lighting.updateUniformFloat("light.Quadratic", 0.032);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gPosition);
         glActiveTexture(GL_TEXTURE1);
@@ -529,8 +526,8 @@ int main(int argc, char *argv[])
         glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
         glActiveTexture(GL_TEXTURE3);// add extra SSAO texture to lighting pass
         glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
-        lighting.updateUniformFloat3("view_pos", camera.get_position());
         renderQuad();
+        glDisable(GL_BLEND);
 
         // Swap buffers
         glfwSwapBuffers(window);

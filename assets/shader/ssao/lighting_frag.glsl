@@ -7,44 +7,37 @@ uniform sampler2D gNormal;
 uniform sampler2D gAlbedo;
 uniform sampler2D ssao;
 
-struct Material {
-    sampler2D Kd;
-    vec3 Ks; // specular coeff.
-    float highlight_decay; // control the size of highlight.
+struct Light
+{
+    vec3 Position;
+    vec3 Color;
+    float Linear;
+    float Quadratic;
 };
 
-struct PointLight {
-    vec3 pos;
-    vec3 Ia;
-    vec3 Id;
-    vec3 Is;
-};
-
-uniform vec3 view_pos;
-uniform Material material;
-uniform PointLight light;
+uniform Light light;
 
 void main() {
 	vec3 frag_pos = texture(gPosition, frag_tex_coord).rgb;
 	vec3 frag_normal = texture(gNormal, frag_tex_coord).rgb;
-	vec3 frag_albedo = texture(gAlbedo, frag_tex_coord).rgb;
+	vec4 frag_albedo = texture(gAlbedo, frag_tex_coord);
 	float ao = texture(ssao, frag_tex_coord).r;
 
 	// calculate lighting as usual
-    vec4 DiffuseMapTexColor = vec4(frag_albedo, 1.0f);
-    // ambient
-    vec3 La = DiffuseMapTexColor.rgb * light.Ia * ao;
-    // diffuse
-    vec3 norm = normalize(frag_normal);
-    vec3 light_dir = normalize(light.pos - frag_pos);
-    float diff_coef = max(dot(norm, light_dir), 0.0f);
-    vec3 Ld = diff_coef * DiffuseMapTexColor.rgb * light.Id;
-    // specular
-    vec3 view_dir = normalize(view_pos - frag_pos);
-    vec3 half_vec = normalize(light_dir + view_dir);
-    float spec_coef = pow(max(dot(half_vec, norm), 0.0f), material.highlight_decay);
-    vec3 Ls = spec_coef * material.Ks * light.Is;
+    vec3 ambient = vec3(0.3 * frag_albedo * ao);
+    vec3 lighting = ambient;
+    vec3 viewDir = normalize(-frag_pos);
+    // diffuse shading
+    vec3 lightDir = normalize(light.Position - frag_pos);
+    vec3 diffuse = max(dot(frag_normal, lightDir), 0.0) * frag_albedo.rgb * light.Color;
+    // specular shading
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    vec3 specular = pow(max(dot(frag_normal, halfwayDir), 0.0), 32.0) * light.Color;
+    // attenuation
+    float distance = length(light.Position - frag_pos);
+    float attenuation = 1.0 / (1.0 + light.Linear * distance + light.Quadratic * (distance * distance));
+    // combine results
+    lighting += (diffuse + specular) * attenuation;
 
-    vec3 L = La + Ld + Ls;
-    frag_color = vec4(L, 1.0f);
+    frag_color = vec4(lighting, 1.0);
 }
