@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
 
 	// Create scent
 	std::default_random_engine generator(time(NULL));
-    Scent scent(generator, scent_shader, 0.1);
+    Scent scent(generator, scent_shader, 0.1f);
     scent.initGL();
 
     auto wolf =
@@ -348,14 +348,14 @@ int main(int argc, char *argv[])
     /* Skybox forest */
     auto skybox = litewq::SkyBoxMesh::build();
     litewq::SkyBoxTexture skybox_tex;
-//     skybox_tex.LoadTexture({
-//             litewq::Loader::getAssetPath("tex/Plants/posx.jpg"),
-//             litewq::Loader::getAssetPath("tex/Plants/negx.jpg"),
-//             litewq::Loader::getAssetPath("tex/Plants/posy.jpg"),
-//             litewq::Loader::getAssetPath("tex/Plants/negy.jpg"),
-//             litewq::Loader::getAssetPath("tex/Plants/posz.jpg"),
-//             litewq::Loader::getAssetPath("tex/Plants/negz.jpg"),
-//     });
+    skybox_tex.LoadTexture({
+         litewq::Loader::getAssetPath("tex/Plants/posx.jpg"),
+         litewq::Loader::getAssetPath("tex/Plants/negx.jpg"),
+         litewq::Loader::getAssetPath("tex/Plants/posy.jpg"),
+         litewq::Loader::getAssetPath("tex/Plants/negy.jpg"),
+         litewq::Loader::getAssetPath("tex/Plants/posz.jpg"),
+         litewq::Loader::getAssetPath("tex/Plants/negz.jpg"),
+    });
 //     skybox_tex.LoadTexture({
 //         litewq::Loader::getAssetPath("tex/skybox_demo/right.jpg"),
 //         litewq::Loader::getAssetPath("tex/skybox_demo/left.jpg"),
@@ -364,15 +364,14 @@ int main(int argc, char *argv[])
 //         litewq::Loader::getAssetPath("tex/skybox_demo/front.jpg"),
 //         litewq::Loader::getAssetPath("tex/skybox_demo/back.jpg"),
 //     });
-//
-//     skybox->initGL();
+    skybox->initGL();
 
     scene.addObject(tree_raw);
     scene.addObject(wolf_raw);
 
     /* Shadow mapping, depth frame buffer and stored in texture. */
     unsigned int DepthMapFBO, DepthMap;
-    constexpr unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+    constexpr unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
     glGenFramebuffers(1, &DepthMapFBO);
 
     glGenTextures(1, &DepthMap);
@@ -429,14 +428,16 @@ int main(int argc, char *argv[])
                        height2 * (fx - x) * (y + 1 - fy) +
                        height3 * (x + 1 - fx) * (fy - y) +
                        height4 * (fx - x) * (fy - y);
-        camera.sety(height + 12.0f);
+        //camera.sety(height + 12.0f);
 
         // Render
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Setup
-        glm::vec3 light_pos = glm::vec3(0.f, 4.f, 3.f);
+        float light_x = cos(currentFrame / 5) * 3;
+        float light_z = sin(currentFrame / 5) * 3;
+        glm::vec3 light_pos = glm::vec3(light_x, 4.f, light_z);
         glm::mat4 light_projection = glm::ortho(-10.f, 10.f, -10.f, 10.f, 1.0f, 7.5f);
         glm::mat4 light_view = glm::lookAt(light_pos, glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
         glm::mat4 world2light = light_projection * light_view;
@@ -449,43 +450,24 @@ int main(int argc, char *argv[])
 
         glm::mat4 model = glm::mat4(1.0f);
 
-        /* always put wolf in front of camera with some distance */
-//        glm::vec3 view_dir = camera.get_view_dir();
-//        glm::vec3 init_view_dir = glm::vec3(0.f, 0.f, -1.f);
-//        glm::vec3 ground_up_vec = glm::vec3(0.f, 1.f, 0.f);
-//        glm::vec3 init_ground_up_vec = glm::vec3(0.f, 1.f, 0.f);
-//
-//        glm::vec3 head_dir = glm::cross(glm::cross(ground_up_vec, view_dir), ground_up_vec);
-//        glm::vec3 wolf_pos = camera.get_position() + head_dir * 0.1f;
-//
-//        glm::mat4 wolf_model2world = glm::lookAt(wolf_pos, wolf_pos + head_dir, ground_up_vec);
-
         scene.render();
         renderHeightMap("", 1.0f);
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, window_width, window_height);
+        glViewport(0, 0, current_width, current_height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /* skybox */
-//        skybox_shader.Bind();
-//        skybox_shader.updateUniformMat4("view", glm::mat4(glm::mat3(view)));
-//        skybox_shader.updateUniformMat4("projection", projection);
-//        skybox_tex.BindTexture();
-//        skybox->render();
 
         // Draw scent
-//        depth_shader.Bind();
-//        scent.render(cameraPos, view, projection, glm::vec4(0, 0, current_width, current_height));
+        glm::mat4 view = camera.get_view_matrix();
+        glm::mat4 projection = glm::perspective(camera.get_zoom(), (float)window_width / (float)window_height, 0.1f, 100.0f);
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, DepthMap);
-        glm::mat4 view = camera.get_view_matrix();
-        glm::mat4 projection = glm::perspective(camera.get_zoom(), (float)window_width / (float)window_height, 0.1f, 100.0f);
         shadow.Bind();
         shadow.updateUniformFloat3("light.pos", light_pos);
-        shadow.updateUniformFloat3("light.Ia", glm::vec3(0.5f, 0.5f, 0.5f));
+        shadow.updateUniformFloat3("light.Ia", glm::vec3(0.6f, 0.6f, 0.6f));
         shadow.updateUniformFloat3("light.Id", glm::vec3(1.0f, 1.0f, 1.0f));
         shadow.updateUniformFloat3("light.Is", glm::vec3(0.2f, 0.2f, 0.2f));
         shadow.updateUniformMat4("lightSpaceMatrix", world2light);
@@ -494,11 +476,21 @@ int main(int argc, char *argv[])
         shadow.updateUniformMat4("projection", projection);
 
 
-        // Draw 21x21 tiles around camera, manually assign material
-        glActiveTexture(GL_TEXTURE0);
         scene.render();
         glBindTexture(GL_TEXTURE_2D, texGrass);
         renderHeightMap("", 1.0f);
+
+        /* skybox */
+        skybox_shader.Bind();
+        skybox_shader.updateUniformMat4("view", glm::mat4(glm::mat3(view)));
+        skybox_shader.updateUniformMat4("projection", projection);
+        skybox_tex.BindTexture();
+        skybox->render();
+
+        scent_shader.Bind();
+        scent_shader.updateUniformMat4("view", view);
+        scent_shader.updateUniformMat4("projection", projection);
+        scent.render(cameraPos, view, projection, glm::vec4(0, 0, current_width, current_height));
         /* render depth */
 //        debug_depth.Bind();
 //        debug_depth.updateUniformFloat("near_plane", 1.0f);
