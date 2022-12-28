@@ -198,7 +198,7 @@ uint8_t *renderHeightMap(const std::string &filename, float scale) {
                 Vertex vert;
                 vert.position_ = glm::vec3(
                         -height / 2.0f + i,
-                        scale * data[(i * width + j) * nrChannels] - 32,
+                        scale * data[(i * width + j) * nrChannels] - 20.5,
                         -width / 2.0f + j);
                 vert.normal_ = glm::vec3(0.0f, 1.0f, 0.0f);
                 vert.texture_coords_ = glm::vec2(
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
                        height2 * (fx - x) * (y + 1 - fy) +
                        height3 * (x + 1 - fx) * (fy - y) +
                        height4 * (fx - x) * (fy - y);
-        camera.sety(height + 8.0f);
+        camera.sety(height + 12.0f);
 
         // Render
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -449,21 +449,6 @@ int main(int argc, char *argv[])
 
         glm::mat4 model = glm::mat4(1.0f);
 
-		// Draw 21x21 tiles around camera, manually assign material
-        glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texGrass);
-		glBindVertexArray(VAO2);
-		glm::vec3 cameraPos = camera.get_position();
-		for (int i = -10; i <= 10; i++)
-			for (int j = -10; j <= 10; j++)
-			{
-				model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(i * 1.0f + floor(cameraPos.x), 0.0f, j * 1.0f + floor(cameraPos.z)));
-				depth_shader.updateUniformMat4("model", model);
-				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-			}
-
-        renderHeightMap("", 1.0f);
         /* always put wolf in front of camera with some distance */
 //        glm::vec3 view_dir = camera.get_view_dir();
 //        glm::vec3 init_view_dir = glm::vec3(0.f, 0.f, -1.f);
@@ -476,6 +461,7 @@ int main(int argc, char *argv[])
 //        glm::mat4 wolf_model2world = glm::lookAt(wolf_pos, wolf_pos + head_dir, ground_up_vec);
 
         scene.render();
+        renderHeightMap("", 1.0f);
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -499,7 +485,7 @@ int main(int argc, char *argv[])
         glm::mat4 projection = glm::perspective(camera.get_zoom(), (float)window_width / (float)window_height, 0.1f, 100.0f);
         shadow.Bind();
         shadow.updateUniformFloat3("light.pos", light_pos);
-        shadow.updateUniformFloat3("light.Ia", glm::vec3(0.3f, 0.3f, 0.3f));
+        shadow.updateUniformFloat3("light.Ia", glm::vec3(0.5f, 0.5f, 0.5f));
         shadow.updateUniformFloat3("light.Id", glm::vec3(1.0f, 1.0f, 1.0f));
         shadow.updateUniformFloat3("light.Is", glm::vec3(0.2f, 0.2f, 0.2f));
         shadow.updateUniformMat4("lightSpaceMatrix", world2light);
@@ -510,21 +496,9 @@ int main(int argc, char *argv[])
 
         // Draw 21x21 tiles around camera, manually assign material
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texGrass);
-        glBindVertexArray(VAO2);
-        shadow.updateUniformFloat3("material.Ks", glm::vec3(.5f, .5f, .5f));
-        shadow.updateUniformFloat("material.highlight_decay", 200.f);
-        cameraPos = camera.get_position();
-        for (int i = -10; i <= 10; i++)
-            for (int j = -10; j <= 10; j++)
-            {
-                model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(i * 1.0f + floor(cameraPos.x), 0.0f, j * 1.0f + floor(cameraPos.z)));
-                shadow.updateUniformMat4("model", model);
-                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            }
         scene.render();
-
+        glBindTexture(GL_TEXTURE_2D, texGrass);
+        renderHeightMap("", 1.0f);
         /* render depth */
 //        debug_depth.Bind();
 //        debug_depth.updateUniformFloat("near_plane", 1.0f);
