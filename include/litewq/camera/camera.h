@@ -42,6 +42,10 @@ namespace litewq
         void set_up(glm::vec3 up) {
             world_up_ = up;
         }
+        void set_pos(const glm::vec3 &pos) {
+            position_ = pos;
+        }
+
 
     private:
 		glm::vec3 position_;

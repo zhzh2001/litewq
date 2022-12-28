@@ -48,11 +48,15 @@ public:
 
     glm::mat4 model {glm::mat4(1.0f)};
     /* Assume all submesh use one shader */
-    // BVHUtils *bvh;
+    BVHUtils *bvh = nullptr;
     Bounds3 ObjectBound;
     std::vector<Triangle *> shapes;
     Bounds3 WorldBound() const {
         return Transform(ObjectBound, model);
+    }
+    void buildBVH();
+    void updateModel(const glm::mat4 &model_mat) {
+        model = model_mat;
     }
 
     /* constructors */
@@ -81,7 +85,6 @@ public:
     virtual void render() override;
     /* portable API for debug */
     void renderSubMesh(unsigned int index);
-    void setMaterialShader(unsigned int index, GLShader *shader);
 
     virtual void initGL() override;
     void finishGL();
