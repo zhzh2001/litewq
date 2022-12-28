@@ -170,6 +170,62 @@ unsigned int loadTexture(const char *path)
 	return textureID;
 }
 
+int width, height, nrChannels;
+uint8_t *renderHeightMap(const std::string &filename, float scale) {
+    static GLuint VAO, VBO, EBO;
+    static uint8_t *data = nullptr;
+    if (VAO == 0) {
+        data = stbi_load(filename.c_str(), &width, &height, &nrChannels, 0);
+        if (data == nullptr) {
+            LOG(FATAL) << "Failed to load texture: " << filename;
+        }
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                Vertex vert;
+                vert.position_ = glm::vec3(
+                        -height / 2.0f + i,
+                        scale * data[(i * width + j) * nrChannels] - 32,
+                        -width / 2.0f + j);
+                vert.normal_ = glm::vec3(0.0f, 1.0f, 0.0f);
+                vert.texture_coords_ = glm::vec2(
+                        (i % 8) / 8.0f,
+                        (j % 8) / 8.0f);
+                vertices.push_back(vert);
+            }
+        }
+        for (int i = 0; i < height - 1; i++)
+            for (int j = 0; j < width; j++)
+                for (int k = 0; k < 2; k++)
+                    indices.push_back((i + k) * width + j);
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+        // position
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) 0);
+        // normal
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, normal_));
+        // texture coords
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, texture_coords_));
+        glBindVertexArray(0);
+    } else {
+        glBindVertexArray(VAO);
+        for (int i = 0; i < height - 1; i++)
+            glDrawElements(GL_TRIANGLE_STRIP, 2 * width, GL_UNSIGNED_INT, (void *) (i * 2 * width * sizeof(unsigned int)));
+        glBindVertexArray(0);
+    }
+    return data;
+}
+
 int main(int argc, char *argv[])
 {
 	// Initialize glfw
@@ -277,6 +333,8 @@ int main(int argc, char *argv[])
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    uint8_t *data = renderHeightMap("assets/tex/iceland_heightmap.png", 0.2f);
+
     // Render loop
 	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -290,11 +348,28 @@ int main(int argc, char *argv[])
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		// Render
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Update height & up vector
+        glm::vec3 cameraPos = camera.get_position();
+        float fx = cameraPos.x + height / 2.0f;
+        int x = floor(fx);
+        float fy = cameraPos.z + width / 2.0f;
+        int y = floor(fy);
+        float height1 = 0.2f * data[(x * width + y) * nrChannels] - 32;
+        float height2 = 0.2f * data[((x + 1) * width + y) * nrChannels] - 32;
+        float height3 = 0.2f * data[(x * width + y + 1) * nrChannels] - 32;
+        float height4 = 0.2f * data[((x + 1) * width + y + 1) * nrChannels] - 32;
+        // Bilinear interpolation
+        float height = height1 * (x + 1 - fx) * (y + 1 - fy) +
+                       height2 * (fx - x) * (y + 1 - fy) +
+                       height3 * (x + 1 - fx) * (fy - y) +
+                       height4 * (fx - x) * (fy - y);
+        camera.sety(height + 8.0f);
 
-		// Setup
+        // Render
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Setup
         phong.Bind();
         glm::vec3 light_pos = glm::vec3(0.f, 80.f, 0.f);
         glm::mat4 light_projection = glm::ortho(-10.f, 10.f, -10.f, 10.f, 1.5f, 7.5f);
@@ -313,21 +388,20 @@ int main(int argc, char *argv[])
 
         glm::mat4 model = glm::mat4(1.0f);
 
-		// Draw 21x21 tiles around camera, manually assign material
-		glBindTexture(GL_TEXTURE_2D, texGrass);
-		glBindVertexArray(VAO2);
+        // Draw 21x21 tiles around camera, manually assign material
+        glBindTexture(GL_TEXTURE_2D, texGrass);
+        // glBindVertexArray(VAO2);
         phong.updateUniformFloat3("material.Ks", glm::vec3(.5f, .5f, .5f));
         phong.updateUniformFloat("material.highlight_decay", 200.f);
-		glm::vec3 cameraPos = camera.get_position();
-		for (int i = -10; i <= 10; i++)
-			for (int j = -10; j <= 10; j++)
-			{
-				model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(i * 1.0f + floor(cameraPos.x), 0.0f, j * 1.0f + floor(cameraPos.z)));
-				phong.updateUniformMat4("model", model);
-				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-			}
-
+        // for (int i = -10; i <= 10; i++)
+        // 	for (int j = -10; j <= 10; j++)
+        // 	{
+        // 		model = glm::mat4(1.0f);
+        // 		model = glm::translate(model, glm::vec3(i * 1.0f + floor(cameraPos.x), 0.0f, j * 1.0f + floor(cameraPos.z)));
+        // 		phong.updateUniformMat4("model", model);
+        // 		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        // 	}
+        renderHeightMap("", 1.0f);
 
         /* always put wolf in front of camera with some distance */
         glm::vec3 view_dir = camera.get_view_dir();
