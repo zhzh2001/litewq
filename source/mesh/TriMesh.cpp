@@ -214,9 +214,21 @@ void TriMesh::initGL() {
     glBindVertexArray(0);
 }
 
+void TriMesh::buildBVH() {
+    std::vector<Shape *> shapes;
+    CHECK_GT(global_indices_.size(), 3)
+        << "The Triangle Mesh should have at least 1 triangle to build BVH";
+    for (unsigned int i = 0; i < global_indices_.size(); i+=3) {
+        auto *triangle = new Triangle(&model, this, &global_indices_[i]);
+        shapes.push_back((Shape *)triangle);
+    }
+    bvh = new BVHUtils(shapes);
+}
+
 void TriMesh::render() {
     GLShader *current = shader ? shader : GLShader::GetCurrentShader();
     glBindVertexArray(VAO);
+    current->updateUniformMat4("model", model);
     for (unsigned int i = 0; i < offsets_.size(); ++i) {
         /* if corresponding submesh has material */
         auto &submesh = offsets_[i];

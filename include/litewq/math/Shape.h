@@ -23,11 +23,11 @@ public:
 class Triangle : public  Shape {
 public:
     Triangle() = delete;
-    Triangle(glm::mat4 *ObjectToWorld, TriMesh *Mesh, int *V) :
+    Triangle(glm::mat4 *ObjectToWorld, TriMesh *Mesh, unsigned int *V) :
             Shape(ObjectToWorld), mesh(Mesh), v(V) {}
     virtual Bounds3 ObjectBound() override;
     TriMesh *mesh;
-    const int *v;
+    const unsigned int *v;
 };
 
 } // end namespace litewq

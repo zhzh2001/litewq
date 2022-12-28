@@ -48,16 +48,6 @@ public:
         return pMin * 0.5f + pMax * 0.5f;
     }
     glm::vec3 Diagonal() const { return pMax - pMin; }
-    /* max extent axis dim. */
-    int maxExtent() const {
-        glm::vec3 d = Diagonal();
-        if (d.x > d.y && d.x > d.z)
-            return 0;
-        else if (d.y > d.z)
-            return 1;
-        else
-            return 2;
-    }
 
     float SurfaceArea() const {
         glm::vec3 d = Diagonal();
