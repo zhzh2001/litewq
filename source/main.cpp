@@ -182,38 +182,61 @@ unsigned int loadTexture(const char *path)
 	return textureID;
 }
 
-// renderQuad() renders a 1x1 XY quad in NDC
-// -----------------------------------------
-unsigned int quadVAO = 0;
-unsigned int quadVBO;
-void renderQuad()
-{
-    if (quadVAO == 0)
-    {
-        float quadVertices[] = {
-                // positions        // texture Coords
-                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-                1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-                1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-        };
-        // setup plane VAO
-        glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+int width, height, nrChannels;
+uint8_t *renderHeightMap(const std::string &filename, float scale) {
+    static GLuint VAO, VBO, EBO;
+    static uint8_t *data = nullptr;
+    if (VAO == 0) {
+        data = stbi_load(filename.c_str(), &width, &height, &nrChannels, 0);
+        if (data == nullptr) {
+            LOG(FATAL) << "Failed to load texture: " << filename;
+        }
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                Vertex vert;
+                vert.position_ = glm::vec3(
+                        -height / 2.0f + i,
+                        scale * data[(i * width + j) * nrChannels] - 20.5,
+                        -width / 2.0f + j);
+                vert.normal_ = glm::vec3(0.0f, 1.0f, 0.0f);
+                vert.texture_coords_ = glm::vec2(
+                        (i % 8) / 8.0f,
+                        (j % 8) / 8.0f);
+                vertices.push_back(vert);
+            }
+        }
+        for (int i = 0; i < height - 1; i++)
+            for (int j = 0; j < width; j++)
+                for (int k = 0; k < 2; k++)
+                    indices.push_back((i + k) * width + j);
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+        // position
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) 0);
+        // normal
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, normal_));
+        // texture coords
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, texture_coords_));
+        glBindVertexArray(0);
+    } else {
+        glBindVertexArray(VAO);
+        for (int i = 0; i < height - 1; i++)
+            glDrawElements(GL_TRIANGLE_STRIP, 2 * width, GL_UNSIGNED_INT, (void *) (i * 2 * width * sizeof(unsigned int)));
+        glBindVertexArray(0);
     }
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
+    return data;
 }
-
-
 
 int main(int argc, char *argv[])
 {
@@ -371,9 +394,12 @@ int main(int argc, char *argv[])
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    uint8_t *data = renderHeightMap("assets/tex/iceland_heightmap.png", 0.2f);
+
     // configure shader
     shadow.Bind();
     shadow.updateUniformInt("shadowMap", 1);
+
 
     // Render loop
 	glEnable(GL_DEPTH_TEST);
@@ -388,9 +414,26 @@ int main(int argc, char *argv[])
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		// Render
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Update height & up vector
+        glm::vec3 cameraPos = camera.get_position();
+        float fx = cameraPos.x + height / 2.0f;
+        int x = floor(fx);
+        float fy = cameraPos.z + width / 2.0f;
+        int y = floor(fy);
+        float height1 = 0.2f * data[(x * width + y) * nrChannels] - 32;
+        float height2 = 0.2f * data[((x + 1) * width + y) * nrChannels] - 32;
+        float height3 = 0.2f * data[(x * width + y + 1) * nrChannels] - 32;
+        float height4 = 0.2f * data[((x + 1) * width + y + 1) * nrChannels] - 32;
+        // Bilinear interpolation
+        float height = height1 * (x + 1 - fx) * (y + 1 - fy) +
+                       height2 * (fx - x) * (y + 1 - fy) +
+                       height3 * (x + 1 - fx) * (fy - y) +
+                       height4 * (fx - x) * (fy - y);
+        camera.sety(height + 12.0f);
+
+        // Render
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Setup
         glm::vec3 light_pos = glm::vec3(0.f, 4.f, 3.f);
@@ -406,20 +449,6 @@ int main(int argc, char *argv[])
 
         glm::mat4 model = glm::mat4(1.0f);
 
-		// Draw 21x21 tiles around camera, manually assign material
-        glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texGrass);
-		glBindVertexArray(VAO2);
-		glm::vec3 cameraPos = camera.get_position();
-		for (int i = -10; i <= 10; i++)
-			for (int j = -10; j <= 10; j++)
-			{
-				model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(i * 1.0f + floor(cameraPos.x), 0.0f, j * 1.0f + floor(cameraPos.z)));
-				depth_shader.updateUniformMat4("model", model);
-				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-			}
-
         /* always put wolf in front of camera with some distance */
 //        glm::vec3 view_dir = camera.get_view_dir();
 //        glm::vec3 init_view_dir = glm::vec3(0.f, 0.f, -1.f);
@@ -432,6 +461,7 @@ int main(int argc, char *argv[])
 //        glm::mat4 wolf_model2world = glm::lookAt(wolf_pos, wolf_pos + head_dir, ground_up_vec);
 
         scene.render();
+        renderHeightMap("", 1.0f);
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -455,7 +485,7 @@ int main(int argc, char *argv[])
         glm::mat4 projection = glm::perspective(camera.get_zoom(), (float)window_width / (float)window_height, 0.1f, 100.0f);
         shadow.Bind();
         shadow.updateUniformFloat3("light.pos", light_pos);
-        shadow.updateUniformFloat3("light.Ia", glm::vec3(0.3f, 0.3f, 0.3f));
+        shadow.updateUniformFloat3("light.Ia", glm::vec3(0.5f, 0.5f, 0.5f));
         shadow.updateUniformFloat3("light.Id", glm::vec3(1.0f, 1.0f, 1.0f));
         shadow.updateUniformFloat3("light.Is", glm::vec3(0.2f, 0.2f, 0.2f));
         shadow.updateUniformMat4("lightSpaceMatrix", world2light);
@@ -466,21 +496,9 @@ int main(int argc, char *argv[])
 
         // Draw 21x21 tiles around camera, manually assign material
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texGrass);
-        glBindVertexArray(VAO2);
-        shadow.updateUniformFloat3("material.Ks", glm::vec3(.5f, .5f, .5f));
-        shadow.updateUniformFloat("material.highlight_decay", 200.f);
-        cameraPos = camera.get_position();
-        for (int i = -10; i <= 10; i++)
-            for (int j = -10; j <= 10; j++)
-            {
-                model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(i * 1.0f + floor(cameraPos.x), 0.0f, j * 1.0f + floor(cameraPos.z)));
-                shadow.updateUniformMat4("model", model);
-                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            }
         scene.render();
-
+        glBindTexture(GL_TEXTURE_2D, texGrass);
+        renderHeightMap("", 1.0f);
         /* render depth */
 //        debug_depth.Bind();
 //        debug_depth.updateUniformFloat("near_plane", 1.0f);

@@ -1,6 +1,8 @@
 # Test Assets Files
 test/
 assets/model/tree
+assets/model/wolf
+assets/tex/Plants
 
 # Config
 .vscode/

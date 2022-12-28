@@ -36,12 +36,18 @@ namespace litewq
         glm::vec3 get_view_dir() const {
             return look_front_;
         }
+        void sety(float y) {
+            position_.y = y;
+        }
+        void set_up(glm::vec3 up) {
+            world_up_ = up;
+        }
         void set_pos(const glm::vec3 &pos) {
             position_ = pos;
         }
 
 
-	private:
+    private:
 		glm::vec3 position_;
 		glm::vec3 front_;
 		glm::vec3 up_;
