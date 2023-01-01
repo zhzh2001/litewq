@@ -35,6 +35,7 @@ OBJ parser support the following features:
 The whole parsing process is quite simple thanks to the clean grammar of Wavefront `.obj` and `.mtl` file. In our testing cases, we can parsing the triangular mesh model files directly exported from Blender.
 
 Some impressive difficulties include:
+
 - Mutiple objects or smooth groups (keyword `o` and `s`) in a same .obj file. We solve this problem with a faces collection class `Geometry`. A `OBJParser` can produce mutiple Geometry.
 - MTL libraries and `usemtl` keyword is loosely connected with faces and vertices. We design a FSMlike mechanism and postpone the MTL parsing.
 
@@ -80,6 +81,7 @@ Shadow mapping is a technique to render simple hard-edge shadow. Referring to [L
 This is done by delay rendering. First we make transformation from World to Light, then rendering into a frame buffer. We then discard the color and leave the depth info. This depth mapping will saved in a texture bound to frame buffer. In the next step, we render to screen frame buffer and utilize the depth texture to draw shadows.
 
 We adapt the `shadow bias` tricks for anti-aliasing.
+
 ## Real-time Collision Detection
 
 ![BVH Tree](img/bvh.png)
@@ -96,10 +98,12 @@ Once we imports a 3D model, we are prepared to build BVH for it as the pipeline 
 - After get the best dimention and its split position, sort the primitives by this dimension. Generate left-hand side primitives and right-hand side primitives, then build BVH recursively.
 
 In collision detection:
+
 - From root of BVH, if the bounding box not intersect, means the 3D model not hit the camera.
 - Otherwise, recusive into left and right sub-BVH. 
 
 In pratice, we build BVH for our wolf model with 200,000 triangles. The game can deal with the collision smoothly without much fps cost.
+
 ## Experimental SSAO Support
 
 Screen Space Ambient Occlusion (SSAO) is a technique to simulate ambient occlusion in screen space. It is a very popular technique in modern game engines. SSAO works together with deferred shading. We heavily referenced [LearnOpenGL](https://learnopengl.com/Advanced-Lighting/SSAO) to implement SSAO in our game. However, as of now, SSAO is not usable in our game.
