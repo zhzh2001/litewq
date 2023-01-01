@@ -32,7 +32,18 @@ OBJ parser support the following features:
 - mesh group
 - material
 
-**TODO: complete this**
+The whole parsing process is quite simple thanks to the clean grammar of Wavefront `.obj` and `.mtl` file. In our testing cases, we can parsing the triangular mesh model files directly exported from Blender.
+
+Some impressive difficulties include:
+- Mutiple objects or smooth groups (keyword `o` and `s`) in a same .obj file. We solve this problem with a faces collection class `Geometry`. A `OBJParser` can produce mutiple Geometry.
+- MTL libraries and `usemtl` keyword is loosely connected with faces and vertices. We design a FSMlike mechanism and postpone the MTL parsing.
+
+In rendering part, our key class is `TriMesh`, holds the global vertex and indices information for sub-meshes (objects) in a single .obj file.
+After parsing is finished, all the vertex and index will be flattened into a large global array which is **directly** used for OpenGL `glBufferData` and `glVertexAttribPointer`. We will record the offset and number of indices in the global indices array for each sub-mesh. We firmly believe this lowering the cost of `VAO` switching and thus boosting the performance.
+
+Later, each submesh will have a MTL library guided material parameters or a default material. They are used to create a wrapped `PhongMaterial` class for each submesh.
+
+**Remark**: Wavefront .obj allow mutiple UV index and normal vector for a single vertex, which has no directly mapping method in GL. We duplicate the vertex as the work-around.
 
 ## Scent Visualization
 
@@ -64,14 +75,31 @@ void main()
 
 ![Shadow Mapping](img/shadow.png)
 
-**TODO: complete this**
+Shadow mapping is a technique to render simple hard-edge shadow. Referring to [LearnOpenGL](https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping), with Bling-Phong lighting model.
 
+This is done by delay rendering. First we make transformation from World to Light, then rendering into a frame buffer. We then discard the color and leave the depth info. This depth mapping will saved in a texture bound to frame buffer. In the next step, we render to screen frame buffer and utilize the depth texture to draw shadows.
+
+We adapt the `shadow bias` tricks for anti-aliasing.
 ## Real-time Collision Detection
 
 ![BVH Tree](img/bvh.png)
 
-**TODO: complete this**
+We choose BVH rather than Quadtree or Octree for the original purpose for acceleration ray-tracing. But we soon found that OpenGL shader pipeline seems not compatible with BVH (CUDA or OpenCL is better). So we utilize BVH for collision detection.
 
+In advance we implements a `AABB` bounding box class and its utility functions. And geometry primitives type `Shape`. We must point out again that ray-tracing is very awful to implement as OpenGL shader prefer plain vertices and indices buffer data to draw triangles but ray-tracing prefer strutuced data which recording the detailed information of each primitive rather than vertices. This lead to a situation that we often are bothered to transform the same data between different forms.
+
+Once we imports a 3D model, we are prepared to build BVH for it as the pipeline below:
+
+- Transform the OpenGL vertex and index information into `Triangle` primtives.
+- Recusively build BVH with SAH optimization in the following steps.
+- For each dimension split into **B**(=12) buckets, and choose the best split position with SAH cost estimation.
+- After get the best dimention and its split position, sort the primitives by this dimension. Generate left-hand side primitives and right-hand side primitives, then build BVH recursively.
+
+In collision detection:
+- From root of BVH, if the bounding box not intersect, means the 3D model not hit the camera.
+- Otherwise, recusive into left and right sub-BVH. 
+
+In pratice, we build BVH for our wolf model with 200,000 triangles. The game can deal with the collision smoothly without much fps cost.
 ## Experimental SSAO Support
 
 Screen Space Ambient Occlusion (SSAO) is a technique to simulate ambient occlusion in screen space. It is a very popular technique in modern game engines. SSAO works together with deferred shading. We heavily referenced [LearnOpenGL](https://learnopengl.com/Advanced-Lighting/SSAO) to implement SSAO in our game. However, as of now, SSAO is not usable in our game.
