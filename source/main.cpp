@@ -428,7 +428,8 @@ int main(int argc, char *argv[])
                        height2 * (fx - x) * (y + 1 - fy) +
                        height3 * (x + 1 - fx) * (fy - y) +
                        height4 * (fx - x) * (fy - y);
-        //camera.sety(height + 12.0f);
+
+        camera.sety(height + 12.0f);
 
         // Render
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -450,6 +451,17 @@ int main(int argc, char *argv[])
 
         glm::mat4 model = glm::mat4(1.0f);
 
+        /* always put wolf in front of camera with some distance */
+//        glm::vec3 view_dir = camera.get_view_dir();
+//        glm::vec3 init_view_dir = glm::vec3(0.f, 0.f, -1.f);
+//        glm::vec3 ground_up_vec = glm::vec3(0.f, 1.f, 0.f);
+//        glm::vec3 init_ground_up_vec = glm::vec3(0.f, 1.f, 0.f);
+//
+//        glm::vec3 head_dir = glm::cross(glm::cross(ground_up_vec, view_dir), ground_up_vec);
+//        glm::vec3 wolf_pos = camera.get_position() + head_dir * 0.1f;
+//
+//        glm::mat4 wolf_model2world = glm::lookAt(wolf_pos, wolf_pos + head_dir, ground_up_vec);
+
         scene.render();
         renderHeightMap("", 1.0f);
 
@@ -467,7 +479,7 @@ int main(int argc, char *argv[])
         glBindTexture(GL_TEXTURE_2D, DepthMap);
         shadow.Bind();
         shadow.updateUniformFloat3("light.pos", light_pos);
-        shadow.updateUniformFloat3("light.Ia", glm::vec3(0.6f, 0.6f, 0.6f));
+        shadow.updateUniformFloat3("light.Ia", glm::vec3(0.5f, 0.5f, 0.5f));
         shadow.updateUniformFloat3("light.Id", glm::vec3(1.0f, 1.0f, 1.0f));
         shadow.updateUniformFloat3("light.Is", glm::vec3(0.2f, 0.2f, 0.2f));
         shadow.updateUniformMat4("lightSpaceMatrix", world2light);
@@ -491,6 +503,7 @@ int main(int argc, char *argv[])
         scent_shader.updateUniformMat4("view", view);
         scent_shader.updateUniformMat4("projection", projection);
         scent.render(cameraPos, view, projection, glm::vec4(0, 0, current_width, current_height));
+
         /* render depth */
 //        debug_depth.Bind();
 //        debug_depth.updateUniformFloat("near_plane", 1.0f);
