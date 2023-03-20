@@ -45,7 +45,7 @@ void Scent::render(glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, g
         glm::vec3 position = source_ + direction_ * (1.0f * i);
         glm::vec3 center = glm::project(position, view, projection, glm::vec4(0, 0, 800, 600));
 		glm::vec3 outer = glm::project(position + direction_ * 0.1f, view, projection, glm::vec4(0, 0, 800, 600));
-		shader_.updateUniformMat4("model", glm::translate(glm::mat4(1.0f), position));
+        static_cast<TriMesh *>(mesh_.get())->updateModel(glm::translate(glm::mat4(1.0f), position));
 		shader_.updateUniformFloat3("center", center);
 		shader_.updateUniformFloat3("outer", outer);
 		mesh_->render();
@@ -66,7 +66,7 @@ void Scent::render(glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, g
 		glm::vec3 position = scent_[scent_distance[i].second] + glm::vec3(0, 0.5 * std::sin(current_time * 2.0f + i), 0);
 		glm::vec3 center = glm::project(position, view, projection, viewport);
 		glm::vec3 outer = glm::project(position + direction_ * 0.1f, view, projection, viewport);
-		shader_.updateUniformMat4("model", glm::translate(glm::mat4(1.0f), position));
+        static_cast<TriMesh *>(mesh_.get())->updateModel(glm::translate(glm::mat4(1.0f), position));
 		shader_.updateUniformFloat3("center", center);
 		shader_.updateUniformFloat3("outer", outer);
 		mesh_->render();
